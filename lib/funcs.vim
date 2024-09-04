@@ -68,19 +68,22 @@ export def FindFileOrDir(type: string)
   endif
 
   # Main
-  var substring = input($"{type} to search: ")
+  var substring = input($"{type} to search ('esc' or 'enter' for all the {type}s in the current dir): ")
+  redraw
+  echo "If the search takes too long hit CTRL-C few times and try to
+        \ narrow down your search."
   var results = getcompletion($'**/*{substring}', type)
   # if type == 'dir'
   #   insert(results, '..', 0)
   # endif
-  redraw
 
   if empty(results)
     echo $"\n'{substring}' pattern not found!"
   else
-    echo "If the search takes too long hit CTRL-C few times and try to
-          \ narrow down your search."
     var title = $" Search results for {type}s '{substring}': "
+    if empty(substring)
+      title = $" Search results for {type}s in the current dir: "
+    endif
     ShowPopup(title, results, type)
   endif
 enddef
