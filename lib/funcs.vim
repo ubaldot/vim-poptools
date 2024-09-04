@@ -79,7 +79,7 @@ export def FindFileOrDir(type: string)
   echo "If the search takes too long hit CTRL-C few times and try to
         \ narrow down your search."
   var hidden = substring[0] == '.' ? '' : '*'
-  var results = getcompletion($'**/{hidden}{substring}', type)
+  var results = getcompletion($'**/{hidden}{substring}', type, true)
 
   if empty(results)
     echo $"'{substring}' pattern not found!"
@@ -93,7 +93,7 @@ export def FindFileOrDir(type: string)
 enddef
 
 export def Buffers()
-  var results = getcompletion('', 'buffer')
+  var results = getcompletion('', 'buffer', true)
   var title = " Buffers: "
   ShowPopup(title, results, 'buffer')
 enddef
