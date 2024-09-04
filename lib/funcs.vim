@@ -86,7 +86,11 @@ export def FindFileOrDir(type: string)
   else
     var title = $" Search results for {type}s '{substring}': "
     if empty(substring)
-      title = $" Search results for {type}s in the current dir: "
+      title = $" Search results for {type}s in {getcwd()}: "
+    endif
+
+    if type == 'file'
+      filter(results, 'v:val !~ "\/$"')
     endif
     ShowPopup(title, results, type)
   endif
@@ -99,8 +103,12 @@ export def Buffers()
 enddef
 
 export def RecentFiles()
-  var results =  copy(v:oldfiles)->filter((_, val) => filereadable(expand(val)))
-  var title = " Recently opened files: "
+  var results =  copy(v:oldfiles)
+    ->filter((_, val) => filereadable(expand(val)))
+    # ENABLE IF YOU WANT RELATIVE PATH
+    # ->map((_, val) => fnamemodify(val, ':.'))
+  # var title = $" Recently opened files ({getcwd()}): "
+  var title = $" Recently opened files: "
   ShowPopup(title, results, 'recent_files')
 enddef
 
