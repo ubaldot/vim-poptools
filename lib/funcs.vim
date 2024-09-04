@@ -6,10 +6,10 @@ def PopupCallbackFileBuffer(id: number, idx: number)
     var line = getbufline(winbufnr(id), idx)[0]
     # If the line is a directory
     if line[-1] == '/' || line[-1] == "\\"
-      execute($'cd {line}')
+      exe $'cd {line}'
       pwd
     else
-      execute($'edit {line}')
+      exe $'edit {line}'
     endif
   endif
 enddef
@@ -17,18 +17,15 @@ enddef
 def PopupCallbackHistory(id: number, idx: number)
   if idx != -1
     var cmd = getbufline(winbufnr(id), idx)[0]
-    execute(cmd, "")
+    exe cmd
   endif
 enddef
 
 def PopupCallbackDir(id: number, idx: number)
   if idx != -1
     var dir = getbufline(winbufnr(id), idx)[0]
-    execute($'cd {dir}')
+    exe $'cd {dir}'
     pwd
-    # if dir == '..'
-    #   FindFileOrDir('dir')
-    # endif
   endif
 enddef
 
