@@ -14,11 +14,11 @@ It is not feature rich and performing as other plugins like
 [fzf](https://github.com/junegunn/fzf.vim),
 [fuzzyy](https://github.com/Donaldttt/fuzzyy) or
 [scope](https://github.com/girishji/scope.vim), but it supports my everyday
-job pretty well.
+job pretty well. I personally like how it displays information.
 
-Furthermore, I wanted to practice new things that I discovered in Vim such as
-the `getcompletion()` function. In-fact, differently than the mentioned
-plugins, this plugin is blocking. The others are not.
+The motivation is that I wanted to practice new things that I discovered in
+Vim such as the `getcompletion()` function. In-fact, differently than the
+mentioned plugins, this plugin is synchronous. The others are not.
 
 Therefore, I don't expect that you will use it, but, just in case you want to
 try, consider that the commands for finding stuff take into account the
