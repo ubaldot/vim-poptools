@@ -2,6 +2,14 @@
 
 A simple plugin to show stuff in popup menus.
 
+<p align="center">
+<img src="/vim_poptools.png" width="75%" height="75%">
+</p>
+
+<p align="center" style="font-size:38;">
+* Vim-poptools *
+</p>
+
 It is not feature rich and performing as other plugins like
 [fzf](https://github.com/junegunn/fzf.vim),
 [fuzzyy](https://github.com/Donaldttt/fuzzyy) or
