@@ -23,7 +23,9 @@ plugins, this plugin is blocking. The others are not.
 Therefore, I don't expect that you will use it, but, just in case you want to
 try, consider that the commands for finding stuff take into account the
 setting of `'wildignore'` option, so if you want to exclude some search path,
-you must adjust it.
+you must adjust it. Note that by default, hidden files/folders are excluded.
+If you want to find a hidden file/folder, then you must add `.` at the
+beginning of your search pattern, e.g. `.git*/**/pipeline`.
 
 At the moment the following is what you can show the following in popups. I
 guess what the commands do is self-explanatory:

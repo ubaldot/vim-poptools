@@ -3,8 +3,14 @@ vim9script
 def PopupCallbackFileBuffer(id: number, idx: number)
   if idx != -1
     echo ""
-    var buf = getbufline(winbufnr(id), idx)[0]
-    execute($'edit {buf}')
+    var line = getbufline(winbufnr(id), idx)[0]
+    # If the line is a directory
+    if line[-1] == '/' || line[-1] == "\\"
+      execute($'cd {line}')
+      pwd
+    else
+      execute($'edit {line}')
+    endif
   endif
 enddef
 
@@ -72,13 +78,11 @@ export def FindFileOrDir(type: string)
   redraw
   echo "If the search takes too long hit CTRL-C few times and try to
         \ narrow down your search."
-  var results = getcompletion($'**/*{substring}', type)
-  # if type == 'dir'
-  #   insert(results, '..', 0)
-  # endif
+  var hidden = substring[0] == '.' ? '' : '*'
+  var results = getcompletion($'**/{hidden}{substring}', type)
 
   if empty(results)
-    echo $"\n'{substring}' pattern not found!"
+    echo $"'{substring}' pattern not found!"
   else
     var title = $" Search results for {type}s '{substring}': "
     if empty(substring)
