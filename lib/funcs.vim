@@ -36,9 +36,6 @@ def PopupCallbackDir(id: number, idx: number)
     var dir = getbufline(winbufnr(id), idx)[0]
     exe $'cd {dir}'
     pwd
-    # if dir == '..'
-    #   FindFileOrDir('dir')
-    # endif
   endif
 enddef
 
