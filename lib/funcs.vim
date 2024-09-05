@@ -1,15 +1,25 @@
 vim9script
 
+def PopupCallbackGrep(id: number, idx: number)
+  if idx != -1
+    var selection = getbufline(winbufnr(id), idx)[0]
+    var file = selection->matchstr('^\S\{-}\ze:')
+    var line = selection->matchstr(':\zs\d*\ze:')
+    exe $'edit {file}'
+    cursor(str2nr(line), 1)
+  endif
+enddef
+
 def PopupCallbackFileBuffer(id: number, idx: number)
   if idx != -1
     echo ""
-    var line = getbufline(winbufnr(id), idx)[0]
-    # If the line is a directory
-    if line[-1] == '/' || line[-1] == "\\"
-      execute($'cd {line}')
+    var selection = getbufline(winbufnr(id), idx)[0]
+    # If the selection is a directory
+    if selection[-1] == '/' || selection[-1] == "\\"
+      exe $'cd {selection}'
       pwd
     else
-      execute($'edit {line}')
+      exe $'edit {selection}'
     endif
   endif
 enddef
@@ -17,14 +27,14 @@ enddef
 def PopupCallbackHistory(id: number, idx: number)
   if idx != -1
     var cmd = getbufline(winbufnr(id), idx)[0]
-    execute(cmd, "")
+    exe cmd
   endif
 enddef
 
 def PopupCallbackDir(id: number, idx: number)
   if idx != -1
     var dir = getbufline(winbufnr(id), idx)[0]
-    execute($'cd {dir}')
+    exe $'cd {dir}'
     pwd
     # if dir == '..'
     #   FindFileOrDir('dir')
@@ -41,6 +51,8 @@ def ShowPopup(title: string, results: list<string>, type: string)
     PopupCallback = PopupCallbackDir
   elseif type == 'history'
     PopupCallback = PopupCallbackHistory
+  elseif type == 'grep'
+    PopupCallback = PopupCallbackGrep
   endif
 
   popup_menu(results, {
@@ -94,6 +106,21 @@ export def FindFileOrDir(type: string)
     endif
     ShowPopup(title, results, type)
   endif
+enddef
+
+export def Grep()
+  # Guard
+  if getcwd() == expand('~')
+    echoe "You are in your home directory. Too many results."
+    return
+  endif
+
+  # Main
+  var what = input($"What to find: ")
+  var where = input($"Where to find: ")
+  var results = systemlist($'shopt -s globstar; grep -n {what} {where}')
+  var title = $" Grep results for '{what}': "
+  ShowPopup(title, results, 'grep')
 enddef
 
 export def Buffers()
