@@ -118,7 +118,7 @@ export def GrepQf()
   # Main
   var what = input($"What to find: ")
   var where = input($"Where to find: ")
-  var vimgrep_options = input($"Vimgrep options: ")
+  var vimgrep_options = input($"Vimgrep options (empty = 'gj'): ")
   if empty(vimgrep_options)
     vimgrep_options = 'gj'
   endif
@@ -139,7 +139,7 @@ export def Grep()
   var what = input($"What to find: ")
   var where = input($"Where to find: ")
 
-  var results = ''
+  var results = []
   if has('win32')
     # TODO
   else
