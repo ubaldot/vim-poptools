@@ -105,7 +105,7 @@ export def FindFileOrDir(type: string)
   endif
 enddef
 
-export def GrepQf()
+export def GrepVimgrep()
   # Guard
   if getcwd() == expand('~')
     echoe "You are in your home directory. Too many results."

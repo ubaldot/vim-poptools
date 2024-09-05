@@ -39,7 +39,8 @@ guess what the commands do is self-explanatory:
 :PopupBuffers
 :PopupRecentFiles
 :PopupCmdHistory
-:PopupGrep
+:PopupGrep # External grep, show results in a popup
+:PopupVimgrep # Vimgrep, show results in the quickfix-list
 ```
 
 ... and if you are curious, this is what I have in my `.vimrc`
