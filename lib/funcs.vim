@@ -108,6 +108,26 @@ export def FindFileOrDir(type: string)
   endif
 enddef
 
+export def GrepQf()
+  # Guard
+  if getcwd() == expand('~')
+    echoe "You are in your home directory. Too many results."
+    return
+  endif
+
+  # Main
+  var what = input($"What to find: ")
+  var where = input($"Where to find: ")
+  var vimgrep_options = input($"Vimgrep options: ")
+  if empty(vimgrep_options)
+    vimgrep_options = 'gj'
+  endif
+
+  exe $"vimgrep /{what}/{vimgrep_options} {where}"
+  copen
+enddef
+
+
 export def Grep()
   # Guard
   if getcwd() == expand('~')
@@ -118,7 +138,14 @@ export def Grep()
   # Main
   var what = input($"What to find: ")
   var where = input($"Where to find: ")
-  var results = systemlist($'shopt -s globstar; grep -n {what} {where}')
+
+  var results = ''
+  if has('win32')
+    # TODO
+  else
+    results = systemlist($'shopt -s globstar; grep -n {what} {where}')
+  endif
+
   var title = $" Grep results for '{what}': "
   ShowPopup(title, results, 'grep')
 enddef
