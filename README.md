@@ -39,6 +39,7 @@ guess what the commands do is self-explanatory:
 :PopupBuffers
 :PopupRecentFiles
 :PopupCmdHistory
+:PopupGrep
 ```
 
 ... and if you are curious, this is what I have in my `.vimrc`
@@ -50,4 +51,5 @@ nnoremap <c-p>h <cmd>PopupCmdHistory<cr>
 xnoremap <c-p>h <esc>PopupCmdHistory<cr>
 nnoremap <c-p>d <cmd>PopupFindDir<cr>
 nnoremap <c-p>o <cmd>PopupRecentFiles<cr>
+nnoremap <c-p>g <cmd>PopupGrep<cr>
 ```
