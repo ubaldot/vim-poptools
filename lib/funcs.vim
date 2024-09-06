@@ -74,7 +74,7 @@ export def FindFileOrDir(type: string)
   endif
 
   # Main
-  var substring = input($"{type} to search ('esc' or 'enter' for all the {type}s in the current dir): ")
+  var substring = input($"{getcwd()} - {type} to search ('enter' for all): ")
   redraw
   echo "If the search takes too long hit CTRL-C few times and try to
         \ narrow down your search."
@@ -104,8 +104,8 @@ export def Vimgrep()
   endif
 
   # Main
-  var what = input($"What to find: ")
-  var where = input($"Where to find: ")
+  var what = input($"(current dir: {getcwd()]) What to find: ")
+  var where = input($"In which files: ")
   var vimgrep_options = input($"Vimgrep options (empty = 'gj'): ")
   if empty(vimgrep_options)
     vimgrep_options = 'gj'
@@ -113,7 +113,7 @@ export def Vimgrep()
 
   var cmd = $'vimgrep /{what}/{vimgrep_options} **/{where}'
   redraw
-  echom cmd
+  echo cmd
   exe cmd
   copen
 enddef
@@ -127,8 +127,8 @@ export def Grep()
   endif
 
   # Main
-  var what = input($"What to find: ")
-  var where = input($"Where to find: ")
+  var what = input($"{getcwd()} - What to find: ")
+  var where = input($"{getcwd()} - in which files: ")
 
   var cmd = ''
   if has('win32')

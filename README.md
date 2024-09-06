@@ -38,10 +38,8 @@ guess what the commands do is self-explanatory:
 :PopupBuffers
 :PopupRecentFiles
 :PopupCmdHistory
-:PopupGrep # External grep, show results in a popup. Search recursively by
-default. Use :messages to see what grep command has been executed.
-:PopupVimgrep # Vimgrep, show results in the quickfix-list. Search recursively by
-default. Ok, this does not involve any popup but it us handy.
+:PopupGrep # External grep, show results in a popup. Grep command is displayed.
+:PopupVimgrep # Vimgrep, show results in the quickfix-list. Search recursively.
 ```
 
 ... and if you are curious, this is what I have in my `.vimrc`
@@ -64,11 +62,9 @@ nnoremap <c-p>g <cmd>PopupGrep<cr>
 By default, hidden files are excluded. If you want to find a hidden file, then
 you must add `.` at the beginning of the search pattern of `PopupFindFile`,
 e.g. `.git*` or just `.`. Note that hidden files are searched in non-hidden
-folders.
-
-To find files in a hidden folder, you must first `cd` into such a folder. For
-example, `cd ~/.vim` followed by `PopupFindFiles` will search files inside the
-`.vim` folder.
+folders. To find files in a hidden folder, you must first `cd` into such a
+folder. For example, `cd ~/.vim` followed by `PopupFindFiles` will search
+files inside the `.vim` folder.
 
 ### Folder search
 
