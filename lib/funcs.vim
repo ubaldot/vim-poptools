@@ -1,5 +1,9 @@
 vim9script
 
+# var popup_width = &columns / 3
+# var popup_height = &lines / 2
+
+# Callback functions
 def PopupCallbackGrep(id: number, idx: number)
   if idx != -1
     var selection = getbufline(winbufnr(id), idx)[0]
@@ -41,8 +45,33 @@ def PopupCallbackDir(id: number, idx: number)
   endif
 enddef
 
+# Filter functions
+def UpdatePreview(main_id: number, preview_id: number, opts: dict<any>)
+  # Set-text
+  popup_close(preview_id)
+  var buf_nr = line('.', main_id)
+  var preview_popup = popup_create(string(buf_nr), opts)
+enddef
+
+def PopupFilter(main_id: number, preview_id: number, key: string, type: string, opts: dict<any>): bool
+  # Handle shortcuts
+  if index(['j', "\<down>", "\<c-n>"], key) != -1
+    win_execute(main_id, 'norm j')
+    UpdatePreview(main_id, preview_id, opts)
+    return true
+  elseif index(['k', "\<Up>", "\<c-p>"], key) != -1
+    win_execute(main_id, 'norm k')
+    UpdatePreview(main_id, preview_id, opts)
+    return true
+  else
+    return popup_filter_menu(main_id, key)
+  endif
+enddef
+#
+# MAIN
 def ShowPopup(title: string, results: list<string>, type: string)
 
+  # Callback switch
   var PopupCallback: func
   if type == 'file' || type == 'buffer' || type == 'recent_files'
     PopupCallback = PopupCallbackFileBuffer
@@ -54,7 +83,8 @@ def ShowPopup(title: string, results: list<string>, type: string)
     PopupCallback = PopupCallbackGrep
   endif
 
-  popup_menu(results, {
+  # Popup options
+  var opts = {
     title: title,
     line: &lines,
     col: &columns,
@@ -65,9 +95,40 @@ def ShowPopup(title: string, results: list<string>, type: string)
     maxheight: &lines / 2,
     minwidth: &columns / 2,
     maxwidth: &columns / 2,
-  })
+  }
+
+  # Preview handling
+  # Filter switch
+  var show_preview = type == 'file' || type == 'buffer' || type == 'recent_files'
+
+  var popup_width = &columns / 3
+  var popup_height = &lines / 2
+  if show_preview
+    opts.pos = 'topleft'
+    opts.line = popup_height - popup_height / 2
+    opts.col = popup_width - popup_width / 2 - 2
+    opts.minwidth = popup_width
+    opts.maxwidth = popup_width
+  endif
+  #
+  # Call to main popup
+  var main_id = popup_menu(results, opts)
+
+  var preview_id = -1
+  if show_preview
+    unlet opts.callback
+    opts.col = popup_width + popup_width / 2 + 2
+    # Dummy preview
+    preview_id = popup_create("", opts)
+    UpdatePreview(main_id, preview_id, opts)
+  endif
+
+  opts.filter = (id, key) => PopupFilter(id, preview_id, key, type, opts)
+  popup_setoptions(main_id, opts)
+
 enddef
 
+# API
 export def FindFileOrDir(type: string)
   # Guard
   if type == 'file' && getcwd() == expand('~')
