@@ -104,9 +104,17 @@ export def Vimgrep()
   endif
 
   # Main
-  var what = input($"(current dir: {getcwd()]) What to find: ")
-  var where = input($"In which files: ")
-  var vimgrep_options = input($"Vimgrep options (empty = 'gj'): ")
+  var what = input($"{getcwd()} - What to find: ")
+  if empty(what)
+    return
+  endif
+
+  var where = input($"{getcwd()} - in which files: ")
+  if empty(where)
+    return
+  endif
+
+  var vimgrep_options = input($"{getcwd()} - vimgrep options (empty = 'gj'): ")
   if empty(vimgrep_options)
     vimgrep_options = 'gj'
   endif
@@ -128,7 +136,14 @@ export def Grep()
 
   # Main
   var what = input($"{getcwd()} - What to find: ")
+  if empty(what)
+    return
+  endif
+
   var where = input($"{getcwd()} - in which files: ")
+  if empty(where)
+    where = '*'
+  endif
 
   var cmd = ''
   if has('win32')
