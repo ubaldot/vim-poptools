@@ -126,7 +126,6 @@ export def Vimgrep()
   copen
 enddef
 
-
 export def Grep()
   # Guard
   if getcwd() == expand('~')
