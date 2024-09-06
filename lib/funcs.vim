@@ -113,7 +113,7 @@ export def Vimgrep()
 
   var cmd = $'vimgrep /{what}/{vimgrep_options} **/{where}'
   redraw
-  echo cmd
+  echom cmd
   exe cmd
   copen
 enddef
@@ -140,7 +140,7 @@ export def Grep()
     cmd = $'grep -n -r --include="{where}" "{what}" .'
   endif
   redraw
-  echo cmd
+  echom cmd
   var results = systemlist(cmd)
 
   var title = $" Grep results for '{what}': "
