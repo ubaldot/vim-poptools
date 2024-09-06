@@ -3,6 +3,8 @@ vim9script
 def PopupCallbackGrep(id: number, idx: number)
   if idx != -1
     var selection = getbufline(winbufnr(id), idx)[0]
+    # grep return format is '/path/to/file.xyz:76: ...'
+    # You must extract the filename and the line number
     var file = selection->matchstr('^\S\{-}\ze:')
     var line = selection->matchstr(':\zs\d*\ze:')
     exe $'edit {file}'
@@ -58,15 +60,6 @@ def ShowPopup(title: string, results: list<string>, type: string)
     col: &columns,
     posinvert: false,
     callback: PopupCallback,
-    filter: (id, key) => {
-      # Handle shortcuts
-      if key == '<\esc>'
-        popup_close(id, -1)
-      else
-        return popup_filter_menu(id, key)
-      endif
-      return true
-    },
     borderchars: ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
     border: [1, 1, 1, 1],
     maxheight: &lines / 2,
@@ -83,7 +76,7 @@ export def FindFileOrDir(type: string)
   endif
 
   # Main
-  var substring = input($"{type} to search ('esc' or 'enter' for all the {type}s in the current dir): ")
+  var substring = input($"{getcwd()} - {type} to search ('enter' for all): ")
   redraw
   echo "If the search takes too long hit CTRL-C few times and try to
         \ narrow down your search."
@@ -105,7 +98,7 @@ export def FindFileOrDir(type: string)
   endif
 enddef
 
-export def GrepVimgrep()
+export def Vimgrep()
   # Guard
   if getcwd() == expand('~')
     echoe "You are in your home directory. Too many results."
@@ -113,17 +106,27 @@ export def GrepVimgrep()
   endif
 
   # Main
-  var what = input($"What to find: ")
-  var where = input($"Where to find: ")
-  var vimgrep_options = input($"Vimgrep options (empty = 'gj'): ")
+  var what = input($"{getcwd()} - What to find: ")
+  if empty(what)
+    return
+  endif
+
+  var where = input($"{getcwd()} - in which files: ")
+  if empty(where)
+    where = '*'
+  endif
+
+  var vimgrep_options = input($"{getcwd()} - vimgrep options (empty = 'gj'): ")
   if empty(vimgrep_options)
     vimgrep_options = 'gj'
   endif
 
-  exe $"vimgrep /{what}/{vimgrep_options} {where}"
+  var cmd = $'vimgrep /{what}/{vimgrep_options} **/{where}'
+  redraw
+  echo cmd
+  exe cmd
   copen
 enddef
-
 
 export def Grep()
   # Guard
@@ -133,15 +136,28 @@ export def Grep()
   endif
 
   # Main
-  var what = input($"What to find: ")
-  var where = input($"Where to find: ")
+  var what = input($"{getcwd()} - What to find: ")
+  if empty(what)
+    return
+  endif
 
-  var results = []
+  var where = input($"{getcwd()} - in which files: ")
+  if empty(where)
+    where = '*'
+  endif
+
+  var cmd = ''
   if has('win32')
     # TODO
+    # cmd = $"powershell -c command 'findstr /n /s /r {what} {where}'"
+    cmd = $"findstr /n /s /r {what} {where}"
   else
-    results = systemlist($'shopt -s globstar; grep -n {what} {where}')
+    # cmd = $'shopt -s globstar; grep -n -r {what} {where}'
+    cmd = $'grep -n -r --include="{where}" "{what}" .'
   endif
+  redraw
+  echom cmd
+  var results = systemlist(cmd)
 
   var title = $" Grep results for '{what}': "
   ShowPopup(title, results, 'grep')
