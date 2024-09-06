@@ -111,7 +111,10 @@ export def Vimgrep()
     vimgrep_options = 'gj'
   endif
 
-  exe $'vimgrep /{what}/{vimgrep_options} **/{where}'
+  var cmd = $'vimgrep /{what}/{vimgrep_options} **/{where}'
+  redraw
+  echo cmd
+  exe cmd
   copen
 enddef
 
@@ -134,7 +137,7 @@ export def Grep()
     cmd = $"findstr /n /s /r {what} {where}"
   else
     # cmd = $'shopt -s globstar; grep -n -r {what} {where}'
-    cmd = $'grep -n -r {what} {where}'
+    cmd = $'grep -n -r --include="{where}" "{what}" .'
   endif
   redraw
   echo cmd
