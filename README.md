@@ -25,23 +25,7 @@ it helps me in pausing and reflecting on what I am doing.
 Therefore, I don't expect that you will use it, but, just in case you want to
 give it a try, consider that the commands for finding stuff take into account
 the setting of `'wildignore'` and `'wildoptions'` options, so if you want to
-exclude some search path, you must adjust those options.
-
-### File search
-
-By default, hidden files are excluded. If you want to find a hidden file, then
-you must add `.` at the beginning of the search pattern of `PopupFindFile`,
-e.g. `.git*` or just `.`. Note that hidden files are searched in non-hidden
-folders.
-
-To find files in a hidden folder, you must first `cd` into such a folder. For
-example, `cd ~/.vim` followed by `PopupFindFiles` will search files inside the
-`.vim` folder.
-
-### Folder search
-
-To find hidden folders with `PopupFindDir` command, just add a `.` in front of
-the search pattern, e.g. `.git*`.
+exclude some search path, you must adjust these options.
 
 ### Commands
 
@@ -72,3 +56,21 @@ nnoremap <c-p>d <cmd>PopupFindDir<cr>
 nnoremap <c-p>o <cmd>PopupRecentFiles<cr>
 nnoremap <c-p>g <cmd>PopupGrep<cr>
 ```
+
+## Few notes
+
+### File search
+
+By default, hidden files are excluded. If you want to find a hidden file, then
+you must add `.` at the beginning of the search pattern of `PopupFindFile`,
+e.g. `.git*` or just `.`. Note that hidden files are searched in non-hidden
+folders.
+
+To find files in a hidden folder, you must first `cd` into such a folder. For
+example, `cd ~/.vim` followed by `PopupFindFiles` will search files inside the
+`.vim` folder.
+
+### Folder search
+
+To find hidden folders with `PopupFindDir` command, just add a `.` in front of
+the search pattern, e.g. `.git*`.
