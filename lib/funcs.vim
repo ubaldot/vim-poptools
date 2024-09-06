@@ -96,7 +96,7 @@ export def FindFileOrDir(type: string)
   endif
 enddef
 
-export def GrepVimgrep()
+export def Vimgrep()
   # Guard
   if getcwd() == expand('~')
     echoe "You are in your home directory. Too many results."
@@ -111,7 +111,7 @@ export def GrepVimgrep()
     vimgrep_options = 'gj'
   endif
 
-  exe $"vimgrep /{what}/{vimgrep_options} {where}"
+  exe $'vimgrep /{what}/{vimgrep_options} **/{where}'
   copen
 enddef
 
