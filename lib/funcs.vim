@@ -58,15 +58,6 @@ def ShowPopup(title: string, results: list<string>, type: string)
     col: &columns,
     posinvert: false,
     callback: PopupCallback,
-    filter: (id, key) => {
-      # Handle shortcuts
-      if key == '<\esc>'
-        popup_close(id, -1)
-      else
-        return popup_filter_menu(id, key)
-      endif
-      return true
-    },
     borderchars: ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
     border: [1, 1, 1, 1],
     maxheight: &lines / 2,
