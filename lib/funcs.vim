@@ -130,9 +130,11 @@ export def Grep()
   var cmd = ''
   if has('win32')
     # TODO
-    cmd = $'powershell -c command "findstr /n /s /r \"{what}\" {where}"'
+    # cmd = $"powershell -c command 'findstr /n /s /r {what} {where}'"
+    cmd = $"findstr /n /s /r {what} {where}"
   else
-    cmd = $'shopt -s globstar; grep -n {what} {where}'
+    # cmd = $'shopt -s globstar; grep -n -r {what} {where}'
+    cmd = $'grep -n -r {what} {where}'
   endif
   redraw
   echo cmd
