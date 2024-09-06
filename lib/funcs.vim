@@ -111,7 +111,7 @@ export def Vimgrep()
 
   var where = input($"{getcwd()} - in which files: ")
   if empty(where)
-    return
+    where = '*'
   endif
 
   var vimgrep_options = input($"{getcwd()} - vimgrep options (empty = 'gj'): ")
