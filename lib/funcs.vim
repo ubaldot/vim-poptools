@@ -3,6 +3,8 @@ vim9script
 def PopupCallbackGrep(id: number, idx: number)
   if idx != -1
     var selection = getbufline(winbufnr(id), idx)[0]
+    # grep return format is '/path/to/file.xyz:76: ...'
+    # You must extract the filename and the line number
     var file = selection->matchstr('^\S\{-}\ze:')
     var line = selection->matchstr(':\zs\d*\ze:')
     exe $'edit {file}'

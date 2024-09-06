@@ -29,8 +29,8 @@ exclude some search path, you must adjust these options.
 
 ### Commands
 
-At the moment the following is what you can show the following in popups. I
-guess what the commands do is self-explanatory:
+At the moment the following is what you can show in popups. I guess what the
+commands do is self-explanatory:
 
 ```
 :PopupFindFile
@@ -39,7 +39,7 @@ guess what the commands do is self-explanatory:
 :PopupRecentFiles
 :PopupCmdHistory
 :PopupGrep # External grep, show results in a popup. Grep command is displayed.
-:PopupVimgrep # Vimgrep, show results in the quickfix-list. Search recursively.
+:PopupVimgrep # Vimgrep, show results in the quickfix-list.
 ```
 
 ... and if you are curious, this is what I have in my `.vimrc`
