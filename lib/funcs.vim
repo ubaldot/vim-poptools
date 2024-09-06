@@ -127,12 +127,16 @@ export def Grep()
   var what = input($"What to find: ")
   var where = input($"Where to find: ")
 
-  var results = []
+  var cmd = ''
   if has('win32')
     # TODO
+    cmd = $'powershell -c command "findstr /n /s /r \"{what}\" {where}"'
   else
-    results = systemlist($'shopt -s globstar; grep -n {what} {where}')
+    cmd = $'shopt -s globstar; grep -n {what} {where}'
   endif
+  redraw
+  echo cmd
+  var results = systemlist(cmd)
 
   var title = $" Grep results for '{what}': "
   ShowPopup(title, results, 'grep')
