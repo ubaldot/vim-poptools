@@ -14,11 +14,13 @@ It is not feature rich and performing as other plugins like
 [fzf](https://github.com/junegunn/fzf.vim),
 [fuzzyy](https://github.com/Donaldttt/fuzzyy) or
 [scope](https://github.com/girishji/scope.vim), but it supports my everyday
-job pretty well. I personally like how it displays information.
+job pretty well. I personally like how it displays information. :)
 
-The motivation is that I wanted to practice new things that I discovered in
-Vim such as the `getcompletion()` function. In-fact, differently than the
-mentioned plugins, this plugin is synchronous. The others are not.
+The motivation of this plugin is that I wanted to practice new things that I
+discovered in Vim such as the `getcompletion()` function. In-fact, differently
+than the mentioned plugins, this plugin is synchronous. The others are not.
+Nevertheless, I don't mind to wait a bit while the search thing is blocking:
+it helps me in pausing and reflecting on what I am doing.
 
 Therefore, I don't expect that you will use it, but, just in case you want to
 try, consider that the commands for finding stuff take into account the
@@ -39,14 +41,17 @@ guess what the commands do is self-explanatory:
 :PopupBuffers
 :PopupRecentFiles
 :PopupCmdHistory
-:PopupGrep # External grep, show results in a popup
-:PopupVimgrep # Vimgrep, show results in the quickfix-list
+:PopupGrep # External grep, show results in a popup. Search recursively by
+default.
+:PopupVimgrep # Vimgrep, show results in the quickfix-list. Search recursively by
+default.
 ```
 
 ... and if you are curious, this is what I have in my `.vimrc`
 
 ```
-nnoremap <c-p> <cmd>PopupFindFile<cr>
+nnoremap <c-p> <cmd>PopupFindFile<cr><cr>
+nnoremap <c-p>f <cmd>PopupFindFile<cr>
 nnoremap <c-tab> <cmd>PopupBuffers<cr>
 nnoremap <c-p>h <cmd>PopupCmdHistory<cr>
 xnoremap <c-p>h <esc>PopupCmdHistory<cr>
