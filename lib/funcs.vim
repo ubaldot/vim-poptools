@@ -1,13 +1,15 @@
 vim9script
 
-# var popup_width = &columns / 3
-# var popup_height = &lines / 2
-
-# var preview_id = -1
+var popup_width = &columns / 2
+var popup_height = &lines / 2
+var preview_id = -1
+var ext2ft = {"": "", py: "python", vim: "vim", md: "markdown", c: "c", h: "c", cpp: "cpp", png: ""}
 
 # Callback functions
 def PopupCallbackGrep(id: number, idx: number)
   if idx != -1
+    popup_close(preview_id)
+    preview_id = -1
     var selection = getbufline(winbufnr(id), idx)[0]
     # grep return format is '/path/to/file.xyz:76: ...'
     # You must extract the filename and the line number
@@ -20,6 +22,8 @@ enddef
 
 def PopupCallbackFileBuffer(id: number, idx: number)
   if idx != -1
+    popup_close(preview_id)
+    preview_id = -1
     echo ""
     var selection = getbufline(winbufnr(id), idx)[0]
     exe $'edit {selection}'
@@ -28,6 +32,8 @@ enddef
 
 def PopupCallbackHistory(id: number, idx: number)
   if idx != -1
+    popup_close(preview_id)
+    preview_id = -1
     var cmd = getbufline(winbufnr(id), idx)[0]
     exe cmd
   endif
@@ -35,6 +41,8 @@ enddef
 
 def PopupCallbackDir(id: number, idx: number)
   if idx != -1
+    popup_close(preview_id)
+    preview_id = -1
     var dir = getbufline(winbufnr(id), idx)[0]
     exe $'cd {dir}'
     pwd
@@ -42,32 +50,52 @@ def PopupCallbackDir(id: number, idx: number)
 enddef
 
 # Filter functions
-def UpdatePreview(main_id: number, preview_id: number,  opts: dict<any>): number
+# TODO: differentiate with Grep
+# TODO: add colorscheme
+def UpdatePreview(main_id: number, opts: dict<any>, type: string)
   # Set preview
   if preview_id != -1
     popup_close(preview_id)
   endif
-  var buf_nr = line('.', main_id)
-  return popup_create(string(buf_nr), opts)
+  var idx = line('.', main_id)
+  var highlighted_line = getbufline(winbufnr(main_id), idx)[0]
+  if !filereadable(highlighted_line)
+    echom "The picked line is not a filename (most likely is a grep result)"
+  endif
+  opts.title = $' {highlighted_line} '
+  # Get filetype for syntax highlighting
+  var alt = true
+  var buf_filetype = ""
+  if !alt
+    var tmp_buf = bufadd(highlighted_line)
+    bufload(highlighted_line)
+    buf_filetype = getbufvar(tmp_buf, '&filetype')
+    exe $'bw! {tmp_buf}'
+  else
+    buf_filetype = ext2ft[$'{fnamemodify(highlighted_line, ":e")}']
+  endif
+
+  var buf_lines = readfile(highlighted_line, '', popup_height)
+  preview_id = popup_create(buf_lines, opts)
+  win_execute(preview_id, $'&filetype = "{buf_filetype}"')
 enddef
 
-def PopupFilter(main_id: number, preview_id: number,  main_key: string, type: string, opts: dict<any>): bool
-  # var new_preview_id = preview_id
+def PopupFilter(main_id: number, key: string, type: string, opts: dict<any>): bool
   # Handle shortcuts
-  if index(['j', "\<down>", "\<c-n>"], main_key) != -1
+  if index(['j', "\<down>", "\<c-n>"], key) != -1
     win_execute(main_id, 'norm j')
-    var new_preview_id = UpdatePreview(main_id, preview_id, opts)
-    opts.filter = (id, key) => PopupFilter(id, new_preview_id, key, type, opts)
-    popup_setoptions(main_id, opts)
+    UpdatePreview(main_id, opts, type)
     return true
-  elseif index(['k', "\<Up>", "\<c-p>"], main_key) != -1
+  elseif index(['k', "\<Up>", "\<c-p>"], key) != -1
     win_execute(main_id, 'norm k')
-    var new_preview_id = UpdatePreview(main_id, preview_id, opts)
-    opts.filter = (id, key) => PopupFilter(id, new_preview_id, key, type, opts)
-    popup_setoptions(main_id, opts)
+    UpdatePreview(main_id, opts, type)
+    return true
+  elseif key == "\<esc>"
+    popup_clear()
+    preview_id = -1
     return true
   else
-    return popup_filter_menu(main_id, main_key)
+    return popup_filter_menu(main_id, key)
   endif
 enddef
 #
@@ -86,8 +114,6 @@ def ShowPopup(title: string, results: list<string>, type: string)
     PopupCallback = PopupCallbackGrep
   endif
 
-  var popup_width = &columns / 2
-  var popup_height = &lines / 2
   # Popup options
   var opts = {
     title: title,
@@ -110,8 +136,6 @@ def ShowPopup(title: string, results: list<string>, type: string)
   # show_preview = false
   if show_preview
 
-    var preview_id = -1
-
     # Fix main popup opions
     popup_width = &columns / 3
     opts.pos = 'topleft'
@@ -121,21 +145,20 @@ def ShowPopup(title: string, results: list<string>, type: string)
     opts.maxwidth = popup_width
     opts.minheight = &lines / 2
     opts.maxheight = &lines / 2
-    opts.filter = (id, key) => PopupFilter(id, preview_id, key, type, opts)
+    opts.filter = (id, key) => PopupFilter(id, key, type, opts)
     popup_setoptions(main_id, opts)
 
 
     # Fix preview options
-    # unlet opts.callback
-    # unlet opts.filter
-    # opts.col = popup_width + popup_width / 2 + 2
+    unlet opts.callback
+    opts.col = popup_width + popup_width / 2 + 2
     # preview_id = popup_create("I AM THE PREVIEW! MWAHAHAHA!", opts)
     # popup_setoptions(preview_id, opts)
-    # preview_id = UpdatePreview(main_id, preview_id,  opts)
+    UpdatePreview(main_id, opts, type)
   endif
 enddef
 
-# API
+# API. The following functions are associated to commands in the plugin file.
 export def FindFileOrDir(type: string)
   # Guard
   if type == 'file' && getcwd() == expand('~')
@@ -255,10 +278,3 @@ export def CmdHistory()
   var title = " Commands history: "
   ShowPopup(title, reverse(results[1 : ]), 'history')
 enddef
-
-# export def Dir()
-#   var results = getcompletion('', 'dir')
-#   insert(results, '..', 0)
-#   var title = $" {getcwd()}/ "
-#   ShowPopup(title, results, 'dir')
-# enddef
