@@ -20,13 +20,7 @@ def PopupCallbackFileBuffer(id: number, idx: number)
   if idx != -1
     echo ""
     var selection = getbufline(winbufnr(id), idx)[0]
-    # If the selection is a directory
-    if selection[-1] == '/' || selection[-1] == "\\"
-      exe $'cd {selection}'
-      pwd
-    else
-      exe $'edit {selection}'
-    endif
+    exe $'edit {selection}'
   endif
 enddef
 
@@ -46,22 +40,25 @@ def PopupCallbackDir(id: number, idx: number)
 enddef
 
 # Filter functions
-def UpdatePreview(main_id: number, preview_id: number, opts: dict<any>)
-  # Set-text
-  popup_close(preview_id)
+var preview_id = -1
+def UpdatePreview(main_id: number,  opts: dict<any>)
+  # Set preview
+  if preview_id != -1
+    popup_close(preview_id)
+  endif
   var buf_nr = line('.', main_id)
-  var preview_popup = popup_create(string(buf_nr), opts)
+  preview_id = popup_create(string(buf_nr), opts)
 enddef
 
-def PopupFilter(main_id: number, preview_id: number, key: string, type: string, opts: dict<any>): bool
+def PopupFilter(main_id: number,  key: string, type: string, opts: dict<any>): bool
   # Handle shortcuts
   if index(['j', "\<down>", "\<c-n>"], key) != -1
     win_execute(main_id, 'norm j')
-    UpdatePreview(main_id, preview_id, opts)
+    UpdatePreview(main_id,  opts)
     return true
   elseif index(['k', "\<Up>", "\<c-p>"], key) != -1
     win_execute(main_id, 'norm k')
-    UpdatePreview(main_id, preview_id, opts)
+    UpdatePreview(main_id,  opts)
     return true
   else
     return popup_filter_menu(main_id, key)
@@ -83,6 +80,8 @@ def ShowPopup(title: string, results: list<string>, type: string)
     PopupCallback = PopupCallbackGrep
   endif
 
+  var popup_width = &columns / 2
+  var popup_height = &lines / 2
   # Popup options
   var opts = {
     title: title,
@@ -92,40 +91,39 @@ def ShowPopup(title: string, results: list<string>, type: string)
     callback: PopupCallback,
     borderchars: ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
     border: [1, 1, 1, 1],
-    maxheight: &lines / 2,
-    minwidth: &columns / 2,
-    maxwidth: &columns / 2,
+    maxheight: popup_height,
+    minwidth: popup_width,
+    maxwidth: popup_width,
   }
 
+  var main_id = popup_menu(results, opts)
   # Preview handling
   # Filter switch
   var show_preview = type == 'file' || type == 'buffer' || type == 'recent_files'
 
-  var popup_width = &columns / 3
-  var popup_height = &lines / 2
+  # show_preview = false
   if show_preview
+
+    # Fix main popup opions
+    popup_width = &columns / 3
     opts.pos = 'topleft'
     opts.line = popup_height - popup_height / 2
     opts.col = popup_width - popup_width / 2 - 2
     opts.minwidth = popup_width
     opts.maxwidth = popup_width
-  endif
-  #
-  # Call to main popup
-  var main_id = popup_menu(results, opts)
+    opts.minheight = &lines / 2
+    opts.maxheight = &lines / 2
+    opts.filter = (id, key) => PopupFilter(id,  key, type, opts)
+    popup_setoptions(main_id, opts)
 
-  var preview_id = -1
-  if show_preview
+
+    # Fix preview options
     unlet opts.callback
     opts.col = popup_width + popup_width / 2 + 2
-    # Dummy preview
-    preview_id = popup_create("", opts)
-    UpdatePreview(main_id, preview_id, opts)
+    # preview_id = popup_create("I AM THE PREVIEW! MWAHAHAHA!", opts)
+    # popup_setoptions(preview_id, opts)
+    UpdatePreview(main_id,  opts)
   endif
-
-  opts.filter = (id, key) => PopupFilter(id, preview_id, key, type, opts)
-  popup_setoptions(main_id, opts)
-
 enddef
 
 # API
