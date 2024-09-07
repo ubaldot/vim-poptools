@@ -3,6 +3,8 @@ vim9script
 # var popup_width = &columns / 3
 # var popup_height = &lines / 2
 
+# var preview_id = -1
+
 # Callback functions
 def PopupCallbackGrep(id: number, idx: number)
   if idx != -1
@@ -40,28 +42,32 @@ def PopupCallbackDir(id: number, idx: number)
 enddef
 
 # Filter functions
-var preview_id = -1
-def UpdatePreview(main_id: number,  opts: dict<any>)
+def UpdatePreview(main_id: number, preview_id: number,  opts: dict<any>): number
   # Set preview
   if preview_id != -1
     popup_close(preview_id)
   endif
   var buf_nr = line('.', main_id)
-  preview_id = popup_create(string(buf_nr), opts)
+  return popup_create(string(buf_nr), opts)
 enddef
 
-def PopupFilter(main_id: number,  key: string, type: string, opts: dict<any>): bool
+def PopupFilter(main_id: number, preview_id: number,  main_key: string, type: string, opts: dict<any>): bool
+  # var new_preview_id = preview_id
   # Handle shortcuts
-  if index(['j', "\<down>", "\<c-n>"], key) != -1
+  if index(['j', "\<down>", "\<c-n>"], main_key) != -1
     win_execute(main_id, 'norm j')
-    UpdatePreview(main_id,  opts)
+    var new_preview_id = UpdatePreview(main_id, preview_id, opts)
+    opts.filter = (id, key) => PopupFilter(id, new_preview_id, key, type, opts)
+    popup_setoptions(main_id, opts)
     return true
-  elseif index(['k', "\<Up>", "\<c-p>"], key) != -1
+  elseif index(['k', "\<Up>", "\<c-p>"], main_key) != -1
     win_execute(main_id, 'norm k')
-    UpdatePreview(main_id,  opts)
+    var new_preview_id = UpdatePreview(main_id, preview_id, opts)
+    opts.filter = (id, key) => PopupFilter(id, new_preview_id, key, type, opts)
+    popup_setoptions(main_id, opts)
     return true
   else
-    return popup_filter_menu(main_id, key)
+    return popup_filter_menu(main_id, main_key)
   endif
 enddef
 #
@@ -104,6 +110,8 @@ def ShowPopup(title: string, results: list<string>, type: string)
   # show_preview = false
   if show_preview
 
+    var preview_id = -1
+
     # Fix main popup opions
     popup_width = &columns / 3
     opts.pos = 'topleft'
@@ -113,16 +121,17 @@ def ShowPopup(title: string, results: list<string>, type: string)
     opts.maxwidth = popup_width
     opts.minheight = &lines / 2
     opts.maxheight = &lines / 2
-    opts.filter = (id, key) => PopupFilter(id,  key, type, opts)
+    opts.filter = (id, key) => PopupFilter(id, preview_id, key, type, opts)
     popup_setoptions(main_id, opts)
 
 
     # Fix preview options
-    unlet opts.callback
-    opts.col = popup_width + popup_width / 2 + 2
+    # unlet opts.callback
+    # unlet opts.filter
+    # opts.col = popup_width + popup_width / 2 + 2
     # preview_id = popup_create("I AM THE PREVIEW! MWAHAHAHA!", opts)
     # popup_setoptions(preview_id, opts)
-    UpdatePreview(main_id,  opts)
+    # preview_id = UpdatePreview(main_id, preview_id,  opts)
   endif
 enddef
 
