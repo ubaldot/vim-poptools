@@ -3,7 +3,7 @@ vim9script
 var popup_width = &columns / 2
 var popup_height = &lines / 2
 var preview_id = -1
-var ext2ft = {"": "", py: "python", vim: "vim", md: "markdown", c: "c", h: "c", cpp: "cpp", png: ""}
+var ext2ft = {py: "python", vim: "vim", md: "markdown", c: "c", h: "c", cpp: "cpp"}
 
 # Callback functions
 def PopupCallbackGrep(id: number, idx: number)
@@ -72,7 +72,7 @@ def UpdatePreview(main_id: number, opts: dict<any>, type: string)
     buf_filetype = getbufvar(tmp_buf, '&filetype')
     exe $'bw! {tmp_buf}'
   else
-    buf_filetype = ext2ft[$'{fnamemodify(highlighted_line, ":e")}']
+    buf_filetype = get(ext2ft, $'{fnamemodify(highlighted_line, ":e")}', "")
   endif
 
   var buf_lines = readfile(highlighted_line, '', popup_height)
