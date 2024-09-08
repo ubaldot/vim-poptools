@@ -2,7 +2,33 @@ vim9script
 
 var popup_width = &columns / 2
 var popup_height = &lines / 2
-var ext2ft = {}
+
+# --- NOT USED but useful
+def GetFiletypeByFilename(fname: string): string
+    # NOT USED
+    # Pretend to load a buffer and detect its filetype manually
+    # Used in UpdatePreviewAlternative()
+
+    # just return &filetype if buffer was already loaded
+    if bufloaded(fname)
+        return getbufvar(fname, '&filetype')
+    endif
+
+    new
+    try
+        # the `file' command never reads file data from disk
+        # (but may read path/directory contents)
+        # however the detection will become less accurate
+        # as some types cannot be recognized for empty files
+        noautocmd silent! execute 'file' fnameescape(fname)
+        filetype detect
+        return &filetype
+    finally
+        bwipeout!
+    endtry
+    return ''
+enddef
+# ------------ END NOT USED -----------
 
 # ----- Callback functions
 def PopupCallbackGrep(id: number, preview_id: number, idx: number)
@@ -53,33 +79,60 @@ enddef
 # Filter functions
 # TODO: differentiate with Grep
 # TODO: add colorscheme
-def UpdatePreview(main_id: number, preview_id: number, type: string)
+
+# --- NOT USED, but it may be useful
+def UpdatePreviewAlternative(main_id: number, preview_id: number, type: string)
+  # NOT USED
+  # Alternative way for setting the filetype in the preview window.
+  # It works with GetFiletypeByFilename() and it is slower
   var idx = line('.', main_id)
   var highlighted_line = getbufline(winbufnr(main_id), idx)[0]
-  # TODO: check
-  # if !filereadable(highlighted_line) && highlighted_line !~ "I AM THE PREVIEW! MWAHAHAHA!"
-  #   echo "The picked line is not a filename (most likely is a grep result)"
-  # endif
+  var buf_lines = readfile(expand(highlighted_line), '', popup_height)
+
+  var buf_filetype = GetFiletypeByFilename(highlighted_line)
+
+  # Clean the preview
+  popup_settext(preview_id, repeat([""], popup_height))
+  # populate the preview
+  # TODO readfile gives me folded content
+  popup_settext(preview_id, buf_lines)
+  # Syntax highlight
+  win_execute(preview_id, $'&filetype = "{buf_filetype}"')
 
   # Set preview ID title
   var preview_id_opts = popup_getoptions(preview_id)
   preview_id_opts.title = $' {highlighted_line} '
   popup_setoptions(preview_id, preview_id_opts)
+enddef
+# ------------ END NOT USED -----------
 
-  # Get filetype for syntax highlighting
+# Update preview content
+def UpdatePreview(main_id: number, preview_id: number, type: string)
+  var idx = line('.', main_id)
+  var highlighted_line = getbufline(winbufnr(main_id), idx)[0]
   var buf_lines = readfile(expand(highlighted_line), '', popup_height)
-  var buf_extension = $'{fnamemodify(highlighted_line, ":e")}'
-  var found_filetypedetect = autocmd_get({group: 'filetypedetect'})->filter($'v:val.pattern =~ "\\.{buf_extension}$"')
+
   var buf_filetypedetect_cmd = '&filetype = ""'
+
+  # Alternative method uses GetFiletypeByFilename()
+  var buf_extension = $'{fnamemodify(highlighted_line, ":e")}'
+  var found_filetypedetect = autocmd_get({group: 'filetypedetect'})->filter($'v:val.pattern =~ "*\\.{buf_extension}$"')
   if !empty(found_filetypedetect)
     buf_filetypedetect_cmd = found_filetypedetect[0].cmd
   endif
 
-  # Update the popup
+  # Clean the preview
   popup_settext(preview_id, repeat([""], popup_height))
-  popup_settext(preview_id, buf_lines)
+  # populate the preview
   # TODO readfile gives me folded content
+  popup_settext(preview_id, buf_lines)
+  # Syntax highlight
   win_execute(preview_id, buf_filetypedetect_cmd)
+
+  # Set preview ID title
+  var preview_id_opts = popup_getoptions(preview_id)
+  preview_id_opts.title = $' {highlighted_line} '
+  popup_setoptions(preview_id, preview_id_opts)
 enddef
 
 def PopupFilter(main_id: number, preview_id: number, key: string, type: string, opts: dict<any>): bool
@@ -139,7 +192,9 @@ def ShowPopup(title: string, results: list<string>, type: string)
 
     # Options for main_id
     opts.filter = (id, key) => PopupFilter(id, preview_id, key, type, opts)
-    opts.col = popup_width - popup_width / 2 - 2
+    # If too many results, the scrollbar overlap the preview popup
+    var scrollbar_contrib = len(results) > opts.minheight ? 1 : 0
+    opts.col = popup_width - popup_width / 2 - 2 - scrollbar_contrib
 
     UpdatePreview(main_id, preview_id, type)
   endif
