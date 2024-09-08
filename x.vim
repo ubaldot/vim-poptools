@@ -1,6 +1,7 @@
 vim9script noclear
 
 var preview_popup = -1
+ # UBA FREGNA
 
 def PopupSelectCallback(id: number, idc: number)
   popup_close(preview_popup)
@@ -12,6 +13,8 @@ def UpdatePreview(id: any)
   var buf_nr = line('.', id)
   preview_popup = popup_create(buf_nr + 1, opts)
 enddef
+
+# UBA SBORRA
 
 def PopupFilter(id: number, key: string): bool
   # Handle shortcuts

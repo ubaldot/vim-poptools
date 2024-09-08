@@ -81,7 +81,7 @@ enddef
 # TODO: add colorscheme
 
 # --- NOT USED, but it may be useful
-def UpdatePreviewAlternative(main_id: number, preview_id: number, type: string)
+def UpdatePreviewAlternative(main_id: number, preview_id: number, search_type: string)
   # NOT USED
   # Alternative way for setting the filetype in the preview window.
   # It works with GetFiletypeByFilename() and it is slower
@@ -89,6 +89,7 @@ def UpdatePreviewAlternative(main_id: number, preview_id: number, type: string)
   var highlighted_line = getbufline(winbufnr(main_id), idx)[0]
   var buf_lines = readfile(expand(highlighted_line), '', popup_height)
 
+  # UBA SPERMA
   var buf_filetype = GetFiletypeByFilename(highlighted_line)
 
   # Clean the preview
@@ -107,15 +108,43 @@ enddef
 # ------------ END NOT USED -----------
 
 # Update preview content
-def UpdatePreview(main_id: number, preview_id: number, type: string)
+def UpdatePreview(main_id: number, preview_id: number, search_type: string, search_pattern: string)
   var idx = line('.', main_id)
-  var highlighted_line = getbufline(winbufnr(main_id), idx)[0]
-  var buf_lines = readfile(expand(highlighted_line), '', popup_height)
+
+  var filename = search_type != 'grep'
+    ? getbufline(winbufnr(main_id), idx)[0]
+    : getbufline(winbufnr(main_id), idx)[0]->matchstr('^\S\{-}\ze:')
+
+  var line_nr = search_type != 'grep'
+    ? popup_height / 2
+    : str2nr(getbufline(winbufnr(main_id), idx)[0]->matchstr(':\zs\d*\ze:'))
+
+# UBA FIGA
+  var firstline = max([1, line_nr - popup_height / 2])
+
+  # TODO: use external programs to count the lines if needed
+  # var file_length = has('win32') ? str2nr(system('ls')) : str2nr(system($'wc -l {filename}')->matchstr('\s*\zs\d*'))
+
+  var file_content = readfile($'{filename}')
+  var file_length = len(file_content)
+  var lastline = min([file_length, line_nr + popup_height / 2])
+
+  # Alternative using external programs instead or 'readfile()'
+  # var buf_lines = has('win32')
+  #   ? systemlist($'powershell -c "Get-Content {filename} | Select-Object -Skip ({firstline} - 1) -First ({lastline} - {firstline} + 1)"')
+  #   : systemlist($'sed -n "{firstline},{lastline}p" {filename}')
+
+  var buf_lines = file_content[firstline - 1 : lastline]
+
+  # Add line numbers
+  for ii in range(0, len(buf_lines) - 1)
+    buf_lines[ii] = $'{firstline + ii}   {buf_lines[ii]}'
+  endfor
 
   var buf_filetypedetect_cmd = '&filetype = ""'
 
   # Alternative method uses GetFiletypeByFilename()
-  var buf_extension = $'{fnamemodify(highlighted_line, ":e")}'
+  var buf_extension = $'{fnamemodify(filename, ":e")}'
   var found_filetypedetect = autocmd_get({group: 'filetypedetect'})->filter($'v:val.pattern =~ "*\\.{buf_extension}$"')
   if !empty(found_filetypedetect)
     buf_filetypedetect_cmd = found_filetypedetect[0].cmd
@@ -128,22 +157,28 @@ def UpdatePreview(main_id: number, preview_id: number, type: string)
   popup_settext(preview_id, buf_lines)
   # Syntax highlight
   win_execute(preview_id, buf_filetypedetect_cmd)
+  win_execute(preview_id, '&wrap = false')
 
   # Set preview ID title
   var preview_id_opts = popup_getoptions(preview_id)
-  preview_id_opts.title = $' {highlighted_line} '
+  preview_id_opts.title = $' {filename} '
   popup_setoptions(preview_id, preview_id_opts)
+
+  # Highlight search pattern
+  if search_type == 'grep'
+    win_execute(preview_id, $'exe "match Search \"{search_pattern}\""')
+  endif
 enddef
 
-def PopupFilter(main_id: number, preview_id: number, key: string, type: string, opts: dict<any>): bool
+def PopupFilter(main_id: number, preview_id: number, key: string, search_type: string, search_pattern: string): bool
   # Handle shortcuts
   if index(['j', "\<down>", "\<c-n>"], key) != -1
     win_execute(main_id, 'norm j')
-    UpdatePreview(main_id, preview_id, type)
+    UpdatePreview(main_id, preview_id, search_type, search_pattern)
     return true
   elseif index(['k', "\<Up>", "\<c-p>"], key) != -1
     win_execute(main_id, 'norm k')
-    UpdatePreview(main_id, preview_id, type)
+    UpdatePreview(main_id, preview_id, search_type, search_pattern)
     return true
   elseif key == "\<esc>"
     popup_clear()
@@ -154,7 +189,7 @@ def PopupFilter(main_id: number, preview_id: number, key: string, type: string, 
 enddef
 #
 # MAIN
-def ShowPopup(title: string, results: list<string>, type: string)
+def ShowPopup(title: string, results: list<string>, search_type: string, search_pattern: string = '')
 
   # Standard options
   var opts = {
@@ -173,7 +208,7 @@ def ShowPopup(title: string, results: list<string>, type: string)
 
   # Preview handling
   var preview_id = -1
-  var show_preview = type == 'file' || type == 'buffer' || type == 'recent_files'
+  var show_preview = index(['file', 'recent_files', 'buffer', 'grep'], search_type) != -1
   # show_preview = false
   if show_preview
     # Common opts update
@@ -191,23 +226,23 @@ def ShowPopup(title: string, results: list<string>, type: string)
     preview_id = popup_create("I AM THE PREVIEW! MWAHAHAHA!", opts)
 
     # Options for main_id
-    opts.filter = (id, key) => PopupFilter(id, preview_id, key, type, opts)
+    opts.filter = (id, key) => PopupFilter(id, preview_id, key, search_type, search_pattern)
     # If too many results, the scrollbar overlap the preview popup
     var scrollbar_contrib = len(results) > opts.minheight ? 1 : 0
     opts.col = popup_width - popup_width / 2 - 2 - scrollbar_contrib
 
-    UpdatePreview(main_id, preview_id, type)
+    UpdatePreview(main_id, preview_id, search_type, search_pattern)
   endif
 
   # Callback switch for main popup
   var PopupCallback: func
-  if type == 'file' || type == 'buffer' || type == 'recent_files'
+  if index(['file', 'recent_files', 'buffer'], search_type) != -1
     PopupCallback = (id, idx) => PopupCallbackFileBuffer(id, preview_id, idx)
-  elseif type == 'dir'
+  elseif search_type == 'dir'
     PopupCallback = PopupCallbackDir
-  elseif type == 'history'
+  elseif search_type == 'history'
     PopupCallback = (id, idx) => PopupCallbackHistory(id, preview_id, idx)
-  elseif type == 'grep'
+  elseif search_type == 'grep'
     PopupCallback = (id, idx) => PopupCallbackGrep(id, preview_id, idx)
   endif
 
@@ -217,33 +252,33 @@ def ShowPopup(title: string, results: list<string>, type: string)
 enddef
 
 # API. The following functions are associated to commands in the plugin file.
-export def FindFileOrDir(type: string)
+export def FindFileOrDir(search_type: string)
   # Guard
-  if type == 'file' && getcwd() == expand('~')
+  if search_type == 'file' && getcwd() == expand('~')
     echoe "You are in your home directory. Too many results."
     return
   endif
 
   # Main
-  var substring = input($"{getcwd()} - {type} to search ('enter' for all): ")
+  var substring = input($"{getcwd()} - {search_type} to search ('enter' for all): ")
   redraw
   echo "If the search takes too long hit CTRL-C few times and try to
         \ narrow down your search."
   var hidden = substring[0] == '.' ? '' : '*'
-  var results = getcompletion($'**/{hidden}{substring}', type, true)
+  var results = getcompletion($'**/{hidden}{substring}', search_type, true)
 
   if empty(results)
     echo $"'{substring}' pattern not found!"
   else
-    var title = $" Search results for {type}s '{substring}': "
+    var title = $" Search results for {search_type}s '{substring}': "
     if empty(substring)
-      title = $" Search results for {type}s in {getcwd()}: "
+      title = $" Search results for {search_type}s in {getcwd()}: "
     endif
 
-    if type == 'file'
+    if search_type == 'file'
       filter(results, 'v:val !~ "\/$"')
     endif
-    ShowPopup(title, results, type)
+    ShowPopup(title, results, search_type)
   endif
 enddef
 
@@ -309,7 +344,7 @@ export def Grep()
   var results = systemlist(cmd)
 
   var title = $" Grep results for '{what}': "
-  ShowPopup(title, results, 'grep')
+  ShowPopup(title, results, 'grep', what)
 enddef
 
 export def Buffers()
@@ -327,6 +362,8 @@ export def RecentFiles()
   var title = $" Recently opened files: "
   ShowPopup(title, results, 'recent_files')
 enddef
+
+# UBA STOCAZZO
 
 export def CmdHistory()
   var results = split(execute('history :'), '\n')
