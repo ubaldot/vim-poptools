@@ -3,7 +3,30 @@ vim9script
 var popup_width = &columns / 2
 var popup_height = &lines / 2
 var preview_id = -1
-var ext2ft = {py: "python", vim: "vim", md: "markdown", c: "c", h: "c", cpp: "cpp"}
+var ext2ft = {}
+
+# Create a dictionary that associate to each extension a filetype
+# Not perfect but it does the job in most cases
+def GetExtension2FiletypeDict(): dict<string>
+  var tmp = split(execute('au bufread'), "\n")
+  tmp ->filter( 'v:val !~ "BufRead" || v:val !~ "Last set from" ')
+    # select only lines that start with '*.foo' and that contain 'setf '
+    ->filter('v:val =~ "^\\s*\\*\\." &&  v:val =~ "setf "')
+    # Put the results in the form 'foo:bar'
+    ->map((_, val) => substitute(val, '\v\s*\*\.(\w*)\s*setf\s(\w*)', '\1:\2', 'g'))
+    # select only results that of the form 'foo:bar' and NOT '  foo:  bar if something | bla bla | etc'
+    ->filter('v:val =~ "^\\w\\+"')
+
+  var mydict = {}
+  for val in tmp
+    var parts = split(val, ':')
+    mydict[parts[0]] = parts[1]
+  endfor
+
+  return mydict
+enddef
+
+ext2ft = GetExtension2FiletypeDict()
 
 # Callback functions
 def PopupCallbackGrep(id: number, idx: number)
