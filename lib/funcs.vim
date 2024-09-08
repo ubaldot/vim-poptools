@@ -74,17 +74,20 @@ def UpdatePreview(main_id: number, preview_id: number, search_pattern: string)
 
 # UBA FIGA
   # Select the portion of buffer to show in the preview
-  var file_content = readfile($'{filename}')
+  var file_content = readfile($'{expand(filename)}')
 
   var firstline = max([1, line_nr - popup_height / 2])
   var file_length = len(file_content)
   var lastline = min([file_length, line_nr + popup_height / 2])
   var buf_lines = file_content[firstline - 1 : lastline]
 
-  # Add line numbers to the buflines
-  for ii in range(0, len(buf_lines) - 1)
-    buf_lines[ii] = $'{firstline + ii}   {buf_lines[ii]}'
-  endfor
+  # Add line numbers to the buflines: OBS! It may mess-up the syntax, e.g. the
+  # .md files are not correctly viewed. We keep it only foe the grep now.
+  if !empty(search_pattern)
+    for ii in range(0, len(buf_lines) - 1)
+      buf_lines[ii] = $'{firstline + ii}   {buf_lines[ii]}'
+    endfor
+  endif
 
   # Set filetype. No bulletproof!
   var buf_extension = $'{fnamemodify(filename, ":e")}'
