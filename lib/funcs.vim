@@ -4,29 +4,6 @@ var popup_width = &columns / 2
 var popup_height = &lines / 2
 var ext2ft = {}
 
-# Create a dictionary that associate to each extension a filetype
-# Not perfect but it does the job in most cases
-def GetExtension2FiletypeDict(): dict<string>
-  var tmp = split(execute('au bufread'), "\n")
-  tmp ->filter( 'v:val !~ "BufRead" || v:val !~ "Last set from" ')
-    # select only lines that start with '*.foo' and that contain 'setf '
-    ->filter('v:val =~ "^\\s*\\*\\." &&  v:val =~ "setf "')
-    # Put the results in the form 'foo:bar'
-    ->map((_, val) => substitute(val, '\v\s*\*\.(\w*)\s*setf\s(\w*)', '\1:\2', 'g'))
-    # select only results that of the form 'foo:bar' and NOT '  foo:  bar if something | bla bla | etc'
-    ->filter('v:val =~ "^\\w\\+"')
-
-  var mydict = {}
-  for val in tmp
-    var parts = split(val, ':')
-    mydict[parts[0]] = parts[1]
-  endfor
-
-  return mydict
-enddef
-
-ext2ft = GetExtension2FiletypeDict()
-
 # ----- Callback functions
 def PopupCallbackGrep(id: number, preview_id: number, idx: number)
   if idx != -1
@@ -90,12 +67,18 @@ def UpdatePreview(main_id: number, preview_id: number, type: string)
 
   # Get filetype for syntax highlighting
   var buf_lines = readfile(expand(highlighted_line), '', popup_height)
-  var buf_filetype = get(ext2ft, $'{fnamemodify(highlighted_line, ":e")}', "")
+  var buf_extension = $'{fnamemodify(highlighted_line, ":e")}'
+  var found_filetypedetect = autocmd_get({group: 'filetypedetect'})->filter($'v:val.pattern =~ "\\.{buf_extension}$"')
+  var buf_filetypedetect_cmd = '&filetype = ""'
+  if !empty(found_filetypedetect)
+    buf_filetypedetect_cmd = found_filetypedetect[0].cmd
+  endif
 
   # Update the popup
   popup_settext(preview_id, repeat([""], popup_height))
   popup_settext(preview_id, buf_lines)
-  win_execute(preview_id, $'&filetype = "{buf_filetype}"')
+  # TODO readfile gives me folded content
+  win_execute(preview_id, buf_filetypedetect_cmd)
 enddef
 
 def PopupFilter(main_id: number, preview_id: number, key: string, type: string, opts: dict<any>): bool
