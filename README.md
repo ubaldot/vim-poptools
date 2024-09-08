@@ -27,6 +27,8 @@ give it a try, consider that the commands for finding stuff take into account
 the setting of `'wildignore'` and `'wildoptions'` options, so if you want to
 exclude some search path, you must adjust these options.
 
+<!-- UBA FROCIO -->
+
 ### Commands
 
 At the moment the following is what you can show in popups. I guess what the
