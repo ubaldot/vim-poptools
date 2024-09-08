@@ -2,6 +2,7 @@ vim9script
 
 var popup_width = &columns / 2
 var popup_height = &lines / 2
+var saved_colorscheme = execute('colorscheme')
 
 # ----- Callback functions
 def PopupCallbackGrep(id: number, preview_id: number, idx: number)
@@ -49,8 +50,15 @@ def PopupCallbackDir(id: number, idx: number)
   endif
 enddef
 
+def PopupCallbackColorscheme(id: number, idx: number)
+  if idx != -1
+    var scheme = getbufline(winbufnr(id), idx)[0]
+    exe $'colorscheme {scheme}'
+    saved_colorscheme = scheme
+    echom saved_colorscheme
+  endif
+enddef
 # Filter functions
-# TODO: add colorscheme
 
 # You  may use external programs to count the lines if 'readfile()' is too
 # slow, e.g.
@@ -115,6 +123,17 @@ def UpdatePreview(main_id: number, preview_id: number, search_pattern: string)
   endif
 enddef
 
+def ClosePopups(main_id: number, preview_id: number = -1)
+    if preview_id != -1
+      popup_close(preview_id)
+    endif
+    # Remove the callback because popup_close() triggers the callback anyway.
+    var opts = popup_getoptions(main_id)
+    opts.callback = ''
+    popup_setoptions(main_id, opts)
+    popup_close(main_id)
+enddef
+
 def PopupFilter(main_id: number, preview_id: number, key: string, search_pattern: string): bool
   # Handle shortcuts
   if index(['j', "\<down>", "\<c-n>"], key) != -1
@@ -126,12 +145,32 @@ def PopupFilter(main_id: number, preview_id: number, key: string, search_pattern
     UpdatePreview(main_id, preview_id, search_pattern)
     return true
   elseif key == "\<esc>"
-    popup_close(preview_id)
-    # Remove the callback because popup_close() triggers the callback anyway.
-    var opts = popup_getoptions(main_id)
-    opts.callback = ''
-    popup_setoptions(main_id, opts)
-    popup_close(main_id)
+    ClosePopups(main_id, preview_id)
+    return true
+  else
+    return popup_filter_menu(main_id, key)
+  endif
+enddef
+
+def ShowColorscheme(main_id: number)
+    var idx = line('.', main_id)
+    var scheme = getbufline(winbufnr(main_id), idx)[0]
+    exe $'colorscheme {scheme}'
+enddef
+
+def PopupFilterColor(main_id: number, key: string): bool
+  # Handle shortcuts
+  if index(['j', "\<down>", "\<c-n>"], key) != -1
+    win_execute(main_id, 'norm j')
+    ShowColorscheme(main_id)
+    return true
+  elseif index(['k', "\<Up>", "\<c-p>"], key) != -1
+    win_execute(main_id, 'norm k')
+    ShowColorscheme(main_id)
+    return true
+  elseif key == "\<esc>"
+    ClosePopups(main_id)
+    exe $'colorscheme {saved_colorscheme}'
     return true
   else
     return popup_filter_menu(main_id, key)
@@ -176,13 +215,17 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     opts.col = popup_width + popup_width / 2 + 2
     preview_id = popup_create("I AM THE PREVIEW! MWAHAHAHA!", opts)
 
-    # Options for main_id
+    # Options for main_id, will be set later on
     opts.filter = (id, key) => PopupFilter(id, preview_id, key, search_pattern)
     # If too many results, the scrollbar overlap the preview popup
     var scrollbar_contrib = len(results) > opts.minheight ? 1 : 0
     opts.col = popup_width - popup_width / 2 - 2 - scrollbar_contrib
 
     UpdatePreview(main_id, preview_id, search_pattern)
+  endif
+
+  if search_type == 'color'
+    opts.filter = PopupFilterColor
   endif
 
   # Callback switch for main popup
@@ -198,7 +241,11 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   endif
 
   # Set callback for the main popup
-  opts.callback = PopupCallback
+  if search_type != 'color'
+    opts.callback = PopupCallback
+  else
+    opts.callback = PopupCallbackColorscheme
+  endif
   popup_setoptions(main_id, opts)
 enddef
 
@@ -302,6 +349,12 @@ export def Buffers()
   var results = getcompletion('', 'buffer', true)
   var title = " Buffers: "
   ShowPopup(title, results, 'buffer')
+enddef
+
+export def Colorscheme()
+  var results = getcompletion('', 'color', true)
+  var title = " Colorschemes: "
+  ShowPopup(title, results, 'color')
 enddef
 
 export def RecentFiles()
