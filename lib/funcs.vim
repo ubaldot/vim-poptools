@@ -2,7 +2,6 @@ vim9script
 
 var popup_width = &columns / 2
 var popup_height = &lines / 2
-var preview_id = -1
 var ext2ft = {}
 
 # Create a dictionary that associate to each extension a filetype
@@ -28,11 +27,13 @@ enddef
 
 ext2ft = GetExtension2FiletypeDict()
 
-# Callback functions
-def PopupCallbackGrep(id: number, idx: number)
+# ----- Callback functions
+def PopupCallbackGrep(id: number, preview_id: number, idx: number)
   if idx != -1
-    popup_close(preview_id)
-    preview_id = -1
+    if preview_id != -1
+      popup_close(preview_id)
+    endif
+
     var selection = getbufline(winbufnr(id), idx)[0]
     # grep return format is '/path/to/file.xyz:76: ...'
     # You must extract the filename and the line number
@@ -43,20 +44,22 @@ def PopupCallbackGrep(id: number, idx: number)
   endif
 enddef
 
-def PopupCallbackFileBuffer(id: number, idx: number)
+def PopupCallbackFileBuffer(id: number, preview_id: number, idx: number)
   if idx != -1
-    popup_close(preview_id)
-    preview_id = -1
+    if preview_id != -1
+      popup_close(preview_id)
+    endif
     echo ""
     var selection = getbufline(winbufnr(id), idx)[0]
     exe $'edit {selection}'
   endif
 enddef
 
-def PopupCallbackHistory(id: number, idx: number)
+def PopupCallbackHistory(id: number, preview_id: number, idx: number)
   if idx != -1
-    popup_close(preview_id)
-    preview_id = -1
+    if preview_id != -1
+      popup_close(preview_id)
+    endif
     var cmd = getbufline(winbufnr(id), idx)[0]
     exe cmd
   endif
@@ -64,8 +67,6 @@ enddef
 
 def PopupCallbackDir(id: number, idx: number)
   if idx != -1
-    popup_close(preview_id)
-    preview_id = -1
     var dir = getbufline(winbufnr(id), idx)[0]
     exe $'cd {dir}'
     pwd
@@ -75,47 +76,40 @@ enddef
 # Filter functions
 # TODO: differentiate with Grep
 # TODO: add colorscheme
-def UpdatePreview(main_id: number, opts: dict<any>, type: string)
-  # Set preview
-  if preview_id != -1
-    popup_close(preview_id)
-  endif
+def UpdatePreview(main_id: number, preview_id: number, type: string)
   var idx = line('.', main_id)
   var highlighted_line = getbufline(winbufnr(main_id), idx)[0]
   if !filereadable(highlighted_line)
     echom "The picked line is not a filename (most likely is a grep result)"
   endif
-  opts.title = $' {highlighted_line} '
-  # Get filetype for syntax highlighting
-  var alt = true
-  var buf_filetype = ""
-  if !alt
-    var tmp_buf = bufadd(highlighted_line)
-    bufload(highlighted_line)
-    buf_filetype = getbufvar(tmp_buf, '&filetype')
-    exe $'bw! {tmp_buf}'
-  else
-    buf_filetype = get(ext2ft, $'{fnamemodify(highlighted_line, ":e")}', "")
-  endif
 
-  var buf_lines = readfile(highlighted_line, '', popup_height)
-  preview_id = popup_create(buf_lines, opts)
+  # Set preview ID title
+  var preview_id_opts = popup_getoptions(preview_id)
+  preview_id_opts.title = $' {highlighted_line} '
+  popup_setoptions(preview_id, preview_id_opts)
+
+  # Get filetype for syntax highlighting
+  var buf_lines = readfile(expand(highlighted_line), '', popup_height)
+  var buf_filetype = get(ext2ft, $'{fnamemodify(highlighted_line, ":e")}', "")
+
+  # Update the popup
+  popup_settext(preview_id, repeat([""], popup_height))
+  popup_settext(preview_id, buf_lines)
   win_execute(preview_id, $'&filetype = "{buf_filetype}"')
 enddef
 
-def PopupFilter(main_id: number, key: string, type: string, opts: dict<any>): bool
+def PopupFilter(main_id: number, preview_id: number, key: string, type: string, opts: dict<any>): bool
   # Handle shortcuts
   if index(['j', "\<down>", "\<c-n>"], key) != -1
     win_execute(main_id, 'norm j')
-    UpdatePreview(main_id, opts, type)
+    UpdatePreview(main_id, preview_id, type)
     return true
   elseif index(['k', "\<Up>", "\<c-p>"], key) != -1
     win_execute(main_id, 'norm k')
-    UpdatePreview(main_id, opts, type)
+    UpdatePreview(main_id, preview_id, type)
     return true
   elseif key == "\<esc>"
     popup_clear()
-    preview_id = -1
     return true
   else
     return popup_filter_menu(main_id, key)
@@ -125,25 +119,12 @@ enddef
 # MAIN
 def ShowPopup(title: string, results: list<string>, type: string)
 
-  # Callback switch
-  var PopupCallback: func
-  if type == 'file' || type == 'buffer' || type == 'recent_files'
-    PopupCallback = PopupCallbackFileBuffer
-  elseif type == 'dir'
-    PopupCallback = PopupCallbackDir
-  elseif type == 'history'
-    PopupCallback = PopupCallbackHistory
-  elseif type == 'grep'
-    PopupCallback = PopupCallbackGrep
-  endif
-
-  # Popup options
+  # Standard options
   var opts = {
     title: title,
     line: &lines,
     col: &columns,
     posinvert: false,
-    callback: PopupCallback,
     borderchars: ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
     border: [1, 1, 1, 1],
     maxheight: popup_height,
@@ -152,33 +133,47 @@ def ShowPopup(title: string, results: list<string>, type: string)
   }
 
   var main_id = popup_menu(results, opts)
+
   # Preview handling
-  # Filter switch
+  var preview_id = -1
   var show_preview = type == 'file' || type == 'buffer' || type == 'recent_files'
-
-  show_preview = false
+  # show_preview = false
   if show_preview
-
-    # Fix main popup opions
+    # Common opts update
     popup_width = &columns / 3
     opts.pos = 'topleft'
     opts.line = popup_height - popup_height / 2
-    opts.col = popup_width - popup_width / 2 - 2
     opts.minwidth = popup_width
     opts.maxwidth = popup_width
     opts.minheight = &lines / 2
     opts.maxheight = &lines / 2
-    opts.filter = (id, key) => PopupFilter(id, key, type, opts)
-    popup_setoptions(main_id, opts)
 
-
-    # Fix preview options
-    unlet opts.callback
+    # Opts for preview_id
     opts.col = popup_width + popup_width / 2 + 2
-    # preview_id = popup_create("I AM THE PREVIEW! MWAHAHAHA!", opts)
-    # popup_setoptions(preview_id, opts)
-    UpdatePreview(main_id, opts, type)
+    preview_id = popup_create("I AM THE PREVIEW! MWAHAHAHA!", opts)
+
+    # Options for main_id
+    opts.filter = (id, key) => PopupFilter(id, preview_id, key, type, opts)
+    opts.col = popup_width - popup_width / 2 - 2
+
+    UpdatePreview(main_id, preview_id, type)
   endif
+
+  # Callback switch for main popup
+  var PopupCallback: func
+  if type == 'file' || type == 'buffer' || type == 'recent_files'
+    PopupCallback = (id, idx) => PopupCallbackFileBuffer(id, preview_id, idx)
+  elseif type == 'dir'
+    PopupCallback = PopupCallbackDir
+  elseif type == 'history'
+    PopupCallback = (id, idx) => PopupCallbackHistory(id, preview_id, idx)
+  elseif type == 'grep'
+    PopupCallback = (id, idx) => PopupCallbackGrep(id, preview_id, idx)
+  endif
+
+  # Set callback for the main popup
+  opts.callback = PopupCallback
+  popup_setoptions(main_id, opts)
 enddef
 
 # API. The following functions are associated to commands in the plugin file.
