@@ -56,9 +56,10 @@ enddef
 def UpdatePreview(main_id: number, preview_id: number, type: string)
   var idx = line('.', main_id)
   var highlighted_line = getbufline(winbufnr(main_id), idx)[0]
-  if !filereadable(highlighted_line)
-    echom "The picked line is not a filename (most likely is a grep result)"
-  endif
+  # TODO: check
+  # if !filereadable(highlighted_line) && highlighted_line !~ "I AM THE PREVIEW! MWAHAHAHA!"
+  #   echo "The picked line is not a filename (most likely is a grep result)"
+  # endif
 
   # Set preview ID title
   var preview_id_opts = popup_getoptions(preview_id)
@@ -132,6 +133,7 @@ def ShowPopup(title: string, results: list<string>, type: string)
     opts.maxheight = &lines / 2
 
     # Opts for preview_id
+    # TODO: with recent files is not very nice.
     opts.col = popup_width + popup_width / 2 + 2
     preview_id = popup_create("I AM THE PREVIEW! MWAHAHAHA!", opts)
 
