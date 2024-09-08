@@ -123,7 +123,12 @@ def PopupFilter(main_id: number, preview_id: number, key: string, search_pattern
     UpdatePreview(main_id, preview_id, search_pattern)
     return true
   elseif key == "\<esc>"
-    popup_clear()
+    popup_close(preview_id)
+    # Remove the callback because popup_close() triggers the callback anyway.
+    var opts = popup_getoptions(main_id)
+    opts.callback = ''
+    popup_setoptions(main_id, opts)
+    popup_close(main_id)
     return true
   else
     return popup_filter_menu(main_id, key)
