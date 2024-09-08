@@ -3,33 +3,6 @@ vim9script
 var popup_width = &columns / 2
 var popup_height = &lines / 2
 
-# --- NOT USED but useful
-def GetFiletypeByFilename(fname: string): string
-    # NOT USED
-    # Pretend to load a buffer and detect its filetype manually
-    # Used in UpdatePreviewAlternative()
-
-    # just return &filetype if buffer was already loaded
-    if bufloaded(fname)
-        return getbufvar(fname, '&filetype')
-    endif
-
-    new
-    try
-        # the `file' command never reads file data from disk
-        # (but may read path/directory contents)
-        # however the detection will become less accurate
-        # as some types cannot be recognized for empty files
-        noautocmd silent! execute 'file' fnameescape(fname)
-        filetype detect
-        return &filetype
-    finally
-        bwipeout!
-    endtry
-    return ''
-enddef
-# ------------ END NOT USED -----------
-
 # ----- Callback functions
 def PopupCallbackGrep(id: number, preview_id: number, idx: number)
   if idx != -1
@@ -77,86 +50,55 @@ def PopupCallbackDir(id: number, idx: number)
 enddef
 
 # Filter functions
-# TODO: differentiate with Grep
 # TODO: add colorscheme
 
-# --- NOT USED, but it may be useful
-def UpdatePreviewAlternative(main_id: number, preview_id: number, search_type: string)
-  # NOT USED
-  # Alternative way for setting the filetype in the preview window.
-  # It works with GetFiletypeByFilename() and it is slower
-  var idx = line('.', main_id)
-  var highlighted_line = getbufline(winbufnr(main_id), idx)[0]
-  var buf_lines = readfile(expand(highlighted_line), '', popup_height)
-
-  # UBA SPERMA
-  var buf_filetype = GetFiletypeByFilename(highlighted_line)
-
-  # Clean the preview
-  popup_settext(preview_id, repeat([""], popup_height))
-  # populate the preview
-  # TODO readfile gives me folded content
-  popup_settext(preview_id, buf_lines)
-  # Syntax highlight
-  win_execute(preview_id, $'&filetype = "{buf_filetype}"')
-
-  # Set preview ID title
-  var preview_id_opts = popup_getoptions(preview_id)
-  preview_id_opts.title = $' {highlighted_line} '
-  popup_setoptions(preview_id, preview_id_opts)
-enddef
-# ------------ END NOT USED -----------
-
-# Update preview content
-def UpdatePreview(main_id: number, preview_id: number, search_type: string, search_pattern: string)
+# You  may use external programs to count the lines if 'readfile()' is too
+# slow, e.g.
+# var file_length = has('win32') ? str2nr(system('...')) : str2nr(system($'wc -l {filename}')->matchstr('\s*\zs\d*'))
+# var buf_lines = has('win32')
+#   ? systemlist($'powershell -c "Get-Content {filename} | Select-Object -Skip ({firstline} - 1) -First ({lastline} - {firstline} + 1)"')
+#   : systemlist($'sed -n "{firstline},{lastline}p" {filename}')
+#
+# For the syntax highlight, you may use the 'GetFiletypeByFilename()' function
+def UpdatePreview(main_id: number, preview_id: number, search_pattern: string)
+  # Parse the highlighted line on the main popup
   var idx = line('.', main_id)
 
-  var filename = search_type != 'grep'
+  var filename = empty(search_pattern)
     ? getbufline(winbufnr(main_id), idx)[0]
     : getbufline(winbufnr(main_id), idx)[0]->matchstr('^\S\{-}\ze:')
 
-  var line_nr = search_type != 'grep'
+  var line_nr = empty(search_pattern)
     ? popup_height / 2
     : str2nr(getbufline(winbufnr(main_id), idx)[0]->matchstr(':\zs\d*\ze:'))
 
 # UBA FIGA
-  var firstline = max([1, line_nr - popup_height / 2])
-
-  # TODO: use external programs to count the lines if needed
-  # var file_length = has('win32') ? str2nr(system('ls')) : str2nr(system($'wc -l {filename}')->matchstr('\s*\zs\d*'))
-
+  # Select the portion of buffer to show in the preview
   var file_content = readfile($'{filename}')
+
+  var firstline = max([1, line_nr - popup_height / 2])
   var file_length = len(file_content)
   var lastline = min([file_length, line_nr + popup_height / 2])
-
-  # Alternative using external programs instead or 'readfile()'
-  # var buf_lines = has('win32')
-  #   ? systemlist($'powershell -c "Get-Content {filename} | Select-Object -Skip ({firstline} - 1) -First ({lastline} - {firstline} + 1)"')
-  #   : systemlist($'sed -n "{firstline},{lastline}p" {filename}')
-
   var buf_lines = file_content[firstline - 1 : lastline]
 
-  # Add line numbers
+  # Add line numbers to the buflines
   for ii in range(0, len(buf_lines) - 1)
     buf_lines[ii] = $'{firstline + ii}   {buf_lines[ii]}'
   endfor
 
-  var buf_filetypedetect_cmd = '&filetype = ""'
-
-  # Alternative method uses GetFiletypeByFilename()
+  # Set filetype. No bulletproof!
   var buf_extension = $'{fnamemodify(filename, ":e")}'
-  var found_filetypedetect = autocmd_get({group: 'filetypedetect'})->filter($'v:val.pattern =~ "*\\.{buf_extension}$"')
-  if !empty(found_filetypedetect)
-    buf_filetypedetect_cmd = found_filetypedetect[0].cmd
-  endif
+  var found_filetypedetect_cmd = autocmd_get({group: 'filetypedetect'})->filter($'v:val.pattern =~ "*\\.{buf_extension}$"')
+  var set_filetype_cmd = empty(found_filetypedetect_cmd)
+     ? '&filetype = ""'
+     : found_filetypedetect_cmd[0].cmd
 
-  # Clean the preview
+  # Clean the preview popup
   popup_settext(preview_id, repeat([""], popup_height))
   # populate the preview
-  # TODO readfile gives me folded content
   popup_settext(preview_id, buf_lines)
   # Syntax highlight
-  win_execute(preview_id, buf_filetypedetect_cmd)
+  win_execute(preview_id, set_filetype_cmd)
   win_execute(preview_id, '&wrap = false')
 
   # Set preview ID title
@@ -165,20 +107,20 @@ def UpdatePreview(main_id: number, preview_id: number, search_type: string, sear
   popup_setoptions(preview_id, preview_id_opts)
 
   # Highlight search pattern
-  if search_type == 'grep'
+  if !empty(search_pattern)
     win_execute(preview_id, $'exe "match Search \"{search_pattern}\""')
   endif
 enddef
 
-def PopupFilter(main_id: number, preview_id: number, key: string, search_type: string, search_pattern: string): bool
+def PopupFilter(main_id: number, preview_id: number, key: string, search_pattern: string): bool
   # Handle shortcuts
   if index(['j', "\<down>", "\<c-n>"], key) != -1
     win_execute(main_id, 'norm j')
-    UpdatePreview(main_id, preview_id, search_type, search_pattern)
+    UpdatePreview(main_id, preview_id, search_pattern)
     return true
   elseif index(['k', "\<Up>", "\<c-p>"], key) != -1
     win_execute(main_id, 'norm k')
-    UpdatePreview(main_id, preview_id, search_type, search_pattern)
+    UpdatePreview(main_id, preview_id, search_pattern)
     return true
   elseif key == "\<esc>"
     popup_clear()
@@ -208,6 +150,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
 
   # Preview handling
   var preview_id = -1
+  # TODO Organize the conditions for show_preview
   var show_preview = index(['file', 'recent_files', 'buffer', 'grep'], search_type) != -1
   # show_preview = false
   if show_preview
@@ -226,12 +169,12 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     preview_id = popup_create("I AM THE PREVIEW! MWAHAHAHA!", opts)
 
     # Options for main_id
-    opts.filter = (id, key) => PopupFilter(id, preview_id, key, search_type, search_pattern)
+    opts.filter = (id, key) => PopupFilter(id, preview_id, key, search_pattern)
     # If too many results, the scrollbar overlap the preview popup
     var scrollbar_contrib = len(results) > opts.minheight ? 1 : 0
     opts.col = popup_width - popup_width / 2 - 2 - scrollbar_contrib
 
-    UpdatePreview(main_id, preview_id, search_type, search_pattern)
+    UpdatePreview(main_id, preview_id, search_pattern)
   endif
 
   # Callback switch for main popup
