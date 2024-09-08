@@ -156,7 +156,7 @@ def ShowPopup(title: string, results: list<string>, type: string)
   # Filter switch
   var show_preview = type == 'file' || type == 'buffer' || type == 'recent_files'
 
-  # show_preview = false
+  show_preview = false
   if show_preview
 
     # Fix main popup opions
