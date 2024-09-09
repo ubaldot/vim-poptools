@@ -122,7 +122,8 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
   # win_execute(preview_id, $'append(4, ["pippo", "pluto"])')
   setwinvar(preview_id, 'buf_lines', buf_lines)
   win_execute(preview_id, 'append(1, w:buf_lines)')
-  win_execute(preview_id, $'normal! 20j')
+  # win_execute(preview_id, $'normal! 20j')
+  win_execute(preview_id, $"exe 'match Search ''var'''")
   #
   # Syntax highlight
   win_execute(preview_id, set_filetype_cmd)
