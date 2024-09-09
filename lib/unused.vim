@@ -34,7 +34,6 @@ def UpdatePreviewAlternative(main_id: number, preview_id: number, search_type: s
   var highlighted_line = getbufline(winbufnr(main_id), idx)[0]
   var buf_lines = readfile(expand(highlighted_line), '', popup_height)
 
-  # UBA SPERMA
   var buf_filetype = GetFiletypeByFilename(highlighted_line)
 
   # Clean the preview

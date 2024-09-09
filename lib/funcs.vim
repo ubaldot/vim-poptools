@@ -78,7 +78,6 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
     ? popup_height / 2
     : str2nr(getbufline(winbufnr(main_id), idx)[0]->matchstr(':\zs\d*\ze:'))
 
-# UBA FIGA
   # Select the portion of buffer to show in the preview
   var file_content = readfile($'{expand(filename)}')
 
@@ -106,9 +105,11 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
   popup_settext(preview_id, repeat([""], popup_height))
   # populate the preview
   popup_settext(preview_id, buf_lines)
+  #
   # TODO: Open all folds, it works only if you reselect the item in the popup
   # from below.
-  win_execute(preview_id, $'norm! zR')
+  # win_execute(preview_id, $'norm! zR')
+  #
   # Syntax highlight
   win_execute(preview_id, set_filetype_cmd)
   win_execute(preview_id, '&wrap = false')
@@ -171,6 +172,7 @@ def PopupFilterColor(main_id: number, key: string, current_colorscheme: string):
     return true
   elseif key == "\<esc>"
     ClosePopups(main_id, -1)
+    # TODO: BUG
     # exe $'colorscheme {current_colorscheme}'
     return true
   else
@@ -200,7 +202,20 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
 
   # Preview handling
   var preview_id = -1
-  var show_preview = index(['file', 'file_in_path', 'recent_files', 'buffer', 'grep'], search_type) != -1
+
+  var show_preview = false
+  if search_type == 'file'
+    show_preview = get(g:poptools_config, 'preview_file', true)
+  elseif search_type == 'file_in_path'
+    show_preview = get(g:poptools_config, 'preview_file_in_path', true)
+  elseif search_type == 'recent_files'
+    show_preview = get(g:poptools_config, 'preview_recent_files', true)
+  elseif search_type == 'buffer'
+    show_preview = get(g:poptools_config, 'preview_buffers', true)
+  elseif search_type == 'grep'
+    show_preview = get(g:poptools_config, 'preview_grep', true)
+  endif
+
   # show_preview = false
   if show_preview
     # Common opts update
@@ -228,9 +243,6 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   if search_type == 'color'
     opts.filter = (id, key) => PopupFilterColor(id, key, current_colorscheme)
     var init_highlight_location = index(results, current_colorscheme)
-    # echom results
-    # echom current_colorscheme
-    # echom init_highlight_location
     win_execute(main_id, $'norm {init_highlight_location + 1}j')
   endif
 
@@ -327,25 +339,38 @@ export def Grep()
     return
   endif
 
-  var where = input($"{getcwd()} - in which files: ")
-  if empty(where)
-    where = '*'
+  var files = input($"{getcwd()} - in which files: ")
+  if empty(files)
+    files = '*'
   endif
 
   var cmd = ''
-  if has('win32')
-    # TODO
-    # cmd = $"powershell -c command 'findstr /n /s /r {what} {where}'"
-    cmd = $"findstr /n /s /r {what} {where}"
-  else
-    # cmd = $'shopt -s globstar; grep -n -r {what} {where}'
-    cmd = $'grep -n -r --include="{where}" "{what}" .'
+  var search_dir = get(g:poptools_config, 'search_dir', $'{getcwd()}')
+  if has('win32') && exists('+shellslash') && !&shellslash
+    # on windows, need to handle backslash
+    search_dir->substitute('\\', '/', 'g')
   endif
-  redraw
-  echom cmd
-  var results = systemlist(cmd)
 
-  var title = $" Grep results for '{what}': "
+  var cmd_win_default = $'powershell -command "Set-Location -Path {search_dir};gci -Recurse -Filter {files} | Select-String -Pattern {what} -CaseSensitive"'
+  var cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {search_dir}'
+
+  var cmd_win = get(g:poptools_config, 'grep_cmd_win', cmd_win_default)
+  var cmd_nix = get(g:poptools_config, 'grep_cmd_nix', cmd_nix_default)
+
+  redraw
+  # Get results
+  var results = []
+  if has('win32')
+    # In windows we get rid of the ^M and we filter eventual blank lines
+    results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '', 'g'))->filter('v:val != ""')
+    echom cmd_win
+  else
+    # get rid of eventual blank lines
+    results = systemlist(cmd_nix)->filter('v:val != ""')
+    echom cmd_nix
+  endif
+
+  var title = $" {search_dir} - Grep results for '{what}': "
   ShowPopup(title, results, 'grep', what)
 enddef
 
@@ -369,8 +394,6 @@ export def RecentFiles()
   var title = $" Recently opened files: "
   ShowPopup(title, results, 'recent_files')
 enddef
-
-# UBA STOCAZZO
 
 export def CmdHistory()
   var results = split(execute('history :'), '\n')

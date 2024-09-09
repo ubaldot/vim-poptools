@@ -27,8 +27,6 @@ give it a try, consider that the commands for finding stuff take into account
 the setting of `'wildignore'` and `'wildoptions'` options, so if you want to
 exclude some search path, you must adjust these options.
 
-<!-- UBA FROCIO -->
-
 ### Commands
 
 At the moment the following is what you can show in popups. I guess what the
@@ -74,3 +72,50 @@ files inside the `.vim` folder.
 
 To find hidden folders with `PopupFindDir` command, just add a `.` in front of
 the search pattern, e.g. `.git*`.
+
+## Configuration
+
+If you don't like the defaults, you can customize vim-poptools either through
+the options `'wildignoe'` and `'path'` and/or through the `g:poptools_config`
+dictionary that you can set as it follows.
+
+### grep command
+
+The default "grep" commands are:
+
+```
+  cmd_win_default = $'powershell -command "Set-Location -Path {cwd};gci -Recurse -Filter {files} | Select-String -Pattern {what} -CaseSensitive"'
+  cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {cwd}'
+```
+
+but you can override them by setting `g:poptools['cmd_win']` and
+`g:poptools['cmd_nix']`, respectively. You are free to use the placeholders
+_what_, _files_, and _search_dir_ to specify the string to search (e.g.
+`foo`), the files pattern (e.g. `*.vim`) and the search folder (e.g.
+`~/myproject`), respectively
+
+The default "grep" commands are:
+
+```
+  cmd_win_default = $'powershell -command "Set-Location -Path {search_dir};gci -Recurse -Filter {files} | Select-String -Pattern {what} -CaseSensitive"'
+  cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {search_dir}'
+```
+
+### Preview window
+
+You may not want the preview window in every case. For example, you want it
+when you _grep_ but not when you open recent files. You can specify when you
+want the following keys:
+
+```
+ 'preview_file',
+ 'preview_file_in_path',
+ 'preview_recent_files',
+ 'preview_buffer',
+ 'preview_grep'.
+```
+
+You can for example specify
+`g:poptools['preview_grep'] = true, g:poptools['preview_recent_files'] = false,`
+to have a preview window in your grep result list, but not in the recent files
+list.
