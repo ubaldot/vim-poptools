@@ -1,6 +1,6 @@
 # vim-poptools
 
-An eye-candy, lazy plugin to search stuff.
+Exploit popups as much as you can!
 
 <p align="center">
 <img src="/vim_poptools.gif" width="75%" height="75%">
