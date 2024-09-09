@@ -36,10 +36,12 @@ commands do is self-explanatory:
 
 ```
 :PopupFindFile
+:PopupFindFileInPath # Takes into account the setting of `:h 'path'`.
 :PopupFindDir
 :PopupBuffers
 :PopupRecentFiles
 :PopupCmdHistory
+:PopupColorscheme
 :PopupGrep # External grep, show results in a popup. Grep command is displayed.
 :PopupVimgrep # Vimgrep, show results in the quickfix-list.
 ```

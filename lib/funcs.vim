@@ -271,7 +271,7 @@ export def FindFileOrDir(search_type: string)
   if empty(results)
     echo $"'{substring}' pattern not found!"
   else
-    var title = $" Search results for {search_type}s '{substring}': "
+    var title = $" {getcwd()}, {search_type}s '{substring}': "
     if empty(substring)
       title = $" Search results for {search_type}s in {getcwd()}: "
     endif
@@ -366,7 +366,6 @@ export def RecentFiles()
     ->filter((_, val) => filereadable(expand(val)))
     # ENABLE IF YOU WANT RELATIVE PATH
     # ->map((_, val) => fnamemodify(val, ':.'))
-  # var title = $" Recently opened files ({getcwd()}): "
   var title = $" Recently opened files: "
   ShowPopup(title, results, 'recent_files')
 enddef
