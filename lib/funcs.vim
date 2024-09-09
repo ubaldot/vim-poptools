@@ -52,7 +52,7 @@ enddef
 def PopupCallbackColorscheme(id: number, idx: number)
   if idx != -1
     var scheme = getbufline(winbufnr(id), idx)[0]
-    exe $'colorscheme {scheme}'
+    noa exe $'colorscheme {scheme}'
   endif
 enddef
 
@@ -106,6 +106,9 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
   popup_settext(preview_id, repeat([""], popup_height))
   # populate the preview
   popup_settext(preview_id, buf_lines)
+  # TODO: Open all folds, it works only if you reselect the item in the popup
+  # from below.
+  win_execute(preview_id, $'norm! zR')
   # Syntax highlight
   win_execute(preview_id, set_filetype_cmd)
   win_execute(preview_id, '&wrap = false')
@@ -168,7 +171,7 @@ def PopupFilterColor(main_id: number, key: string, current_colorscheme: string):
     return true
   elseif key == "\<esc>"
     ClosePopups(main_id, -1)
-    exe $'colorscheme {current_colorscheme}'
+    # exe $'colorscheme {current_colorscheme}'
     return true
   else
     return popup_filter_menu(main_id, key)
@@ -197,7 +200,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
 
   # Preview handling
   var preview_id = -1
-  var show_preview = index(['file', 'recent_files', 'buffer', 'grep'], search_type) != -1
+  var show_preview = index(['file', 'file_in_path', 'recent_files', 'buffer', 'grep'], search_type) != -1
   # show_preview = false
   if show_preview
     # Common opts update
@@ -233,7 +236,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
 
   # Callback switch for main popup
   var PopupCallback: func
-  if index(['file', 'recent_files', 'buffer'], search_type) != -1
+  if index(['file', 'file_in_path', 'recent_files', 'buffer'], search_type) != -1
     PopupCallback = (id, idx) => PopupCallbackFileBuffer(id, preview_id, idx)
   elseif search_type == 'dir'
     PopupCallback = PopupCallbackDir
@@ -252,7 +255,7 @@ enddef
 # API. The following functions are associated to commands in the plugin file.
 export def FindFileOrDir(search_type: string)
   # Guard
-  if search_type == 'file' && getcwd() == expand('~')
+  if (search_type == 'file' || search_type == 'file_in_path') && getcwd() == expand('~')
     echoe "You are in your home directory. Too many results."
     return
   endif
@@ -273,8 +276,9 @@ export def FindFileOrDir(search_type: string)
       title = $" Search results for {search_type}s in {getcwd()}: "
     endif
 
-    if search_type == 'file'
-      filter(results, 'v:val !~ "\/$"')
+    if search_type == 'file' || search_type == 'file_in_path'
+      results ->filter('v:val !~ "\/$"')
+              ->filter((_, val) => filereadable(expand(val)))
     endif
     ShowPopup(title, results, search_type)
   endif

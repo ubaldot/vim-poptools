@@ -15,10 +15,13 @@ if exists('g:vim_poptools_loaded')
 endif
 g:vim_poptools_loaded = true
 
+# Available to users for config.
+g:poptools_config = {}
 
 import autoload "../lib/funcs.vim"
 
 command! PopupFindFile funcs.FindFileOrDir('file')
+command! PopupFindFileInPath funcs.FindFileOrDir('file_in_path')
 command! PopupFindDir funcs.FindFileOrDir('dir')
 command! PopupBuffers funcs.Buffers()
 command! PopupRecentFiles funcs.RecentFiles()
