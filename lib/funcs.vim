@@ -108,7 +108,7 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
   #
   # TODO: Open all folds, it works only if you reselect the item in the popup
   # from below.
-  # win_execute(preview_id, $'norm! zR')
+  win_execute(preview_id, $'norm! zR')
   #
   # Syntax highlight
   win_execute(preview_id, set_filetype_cmd)

@@ -77,7 +77,8 @@ the search pattern, e.g. `.git*`.
 
 If you don't like the defaults, you can customize vim-poptools either through
 the options `'wildignoe'` and `'path'` and/or through the `g:poptools_config`
-dictionary that you can set as it follows.
+dictionary that you can set as it follows. But first or all, be sure to create
+an empty dictionary in your `.vimrc` file, i.e. `g:poptools_config = {}`.
 
 ### grep command
 
@@ -88,10 +89,10 @@ The default "grep" commands are:
   cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {cwd}'
 ```
 
-but you can override them by setting `g:poptools['cmd_win']` and
-`g:poptools['cmd_nix']`, respectively. You are free to use the placeholders
-_what_, _files_, and _search_dir_ to specify the string to search (e.g.
-`foo`), the files pattern (e.g. `*.vim`) and the search folder (e.g.
+but you can override them by setting `g:poptools_config['cmd_win']` and
+`g:poptools_config['cmd_nix']`, respectively. You are free to use the
+placeholders _what_, _files_, and _search_dir_ to specify the string to search
+(e.g. `foo`), the files pattern (e.g. `*.vim`) and the search folder (e.g.
 `~/myproject`), respectively
 
 The default "grep" commands are:
@@ -116,6 +117,6 @@ want the following keys:
 ```
 
 You can for example specify
-`g:poptools['preview_grep'] = true, g:poptools['preview_recent_files'] = false,`
+`g:poptools_config['preview_grep'] = true, g:poptools_config['preview_recent_files'] = false,`
 to have a preview window in your grep result list, but not in the recent files
 list.
