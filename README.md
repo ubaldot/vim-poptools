@@ -113,10 +113,11 @@ The default "grep" commands are:
 ```
 
 but you can override them by setting `g:poptools_config['cmd_win']` and
-`g:poptools_config['cmd_nix']`, respectively. You are free to use the
-placeholders _what_, _files_, and _search_dir_ to specify the string to search
-(e.g. `foo`), the files pattern (e.g. `*.vim`) and the search folder (e.g.
-`~/myproject`), respectively
+`g:poptools_config['cmd_nix']`, respectively. You can use the placeholders
+`{what}`, `{files}`, and `{search_dir}` to specify the string to search (e.g.
+`foo`), the files pattern (e.g. `*.vim`) and the search folder (e.g.
+`~/myproject`), respectively. The values that you will be prompted to insert
+will be placed into such placeholders.
 
 The default "grep" commands are:
 
