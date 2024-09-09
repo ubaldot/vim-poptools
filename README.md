@@ -3,7 +3,7 @@
 An eye-candy, lazy plugin to search stuff.
 
 <p align="center">
-<img src="/vim_poptools.png" width="75%" height="75%">
+<img src="/vim_poptools.gif" width="75%" height="75%">
 </p>
 
 <p align="center" style="font-size:38;">
