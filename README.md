@@ -50,7 +50,7 @@ the commands are self-explanatory:
 :PoptoolsVimgrep # Vimgrep, show results in the quickfix-list.
 ```
 
-... and if you are curious, this is what I have in my `.vimrc`
+... and if you are curious, the following is how I mapped them:
 
 ```
 nnoremap <c-p> <cmd>PoptoolsFindFile<cr><cr>
@@ -121,10 +121,11 @@ The default "grep" commands are the following:
 However, you can override them by setting `g:poptools_config['cmd_win']` and
 `g:poptools_config['cmd_nix']`, respectively.
 
-You can use the placeholders `{what}`, `{files}`, and `{search_dir}` to
-specify the string to search (e.g. `foo`), the files pattern (e.g. `*.vim`)
-and the search folder (e.g. `~/myproject`), respectively. The values that you
-will be prompted to insert will be placed into such placeholders.
+In such an overriding, you can use the `{what}`, `{files}`, and `{search_dir}`
+placeholders to specify the string to search (e.g. `foo`), the files pattern
+(e.g. `*.vim`) and the search folder (e.g. `~/myproject`), respectively. The
+values that you will be prompted to insert will be placed into tthose
+placeholders.
 
 It follows an example of configuration:
 
