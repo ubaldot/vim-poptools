@@ -1,9 +1,9 @@
 # vim-poptools
 
-A simple plugin to show stuff in popup menus.
+An eye-candy, lazy plugin to search stuff.
 
 <p align="center">
-<img src="/vim_poptools.png" width="75%" height="75%">
+<img src="/vim_poptools.gif" width="75%" height="75%">
 </p>
 
 <p align="center" style="font-size:38;">
@@ -14,45 +14,49 @@ It is not feature rich and performing as other plugins like
 [fzf](https://github.com/junegunn/fzf.vim),
 [fuzzyy](https://github.com/Donaldttt/fuzzyy) or
 [scope](https://github.com/girishji/scope.vim), but it supports my everyday
-job pretty well. I personally like how it displays information. :)
+job pretty well. I personally like how it displays information but it may be a
+bit slower compared to similar plugins - this is synchronous, whereas other
+plugins are typically asynchronous.
 
-The motivation of this plugin is that I wanted to practice new things that I
-discovered in Vim such as the `getcompletion()` function. In-fact, differently
-than the mentioned plugins, this is synchronous. The others are not.
-Nevertheless, I don't mind to wait a bit while the search process is on-going:
-it helps me in pausing and reflecting on what I am doing.
+Nevertheless, I don't mind to wait a bit if the search process takes a while:
+it helps me in pausing and reflecting on what I am doing and give some breath
+to my brain. :)
 
-Therefore, I don't expect that you will use it, but, just in case you want to
-give it a try, consider that the commands for finding stuff take into account
-the setting of `'wildignore'` and `'wildoptions'` options, so if you want to
-exclude some search path, you must adjust these options.
+In case you want to give it a try, consider that the commands for finding
+stuff take into account the setting of `:h 'wildignore'`, `:h 'wildoptions'`
+and `:h 'path'` options, depending on what you are searching, so if you want
+to include/exclude some search path, you must adjust such options. The rest of
+the configuration (in case you don't like the default behavior) is just
+straightforward, see below.
 
 ### Commands
 
-At the moment the following is what you can show in popups. I guess what the
-commands do is self-explanatory:
+At the moment the following is what you can search and show in popups. I guess
+the commands are self-explanatory:
 
 ```
-:PopupFindFile
-:PopupFindDir
-:PopupBuffers
-:PopupRecentFiles
-:PopupCmdHistory
-:PopupGrep # External grep, show results in a popup. Grep command is displayed.
-:PopupVimgrep # Vimgrep, show results in the quickfix-list.
+:PoptoolsFindFile
+:PoptoolsFindFileInPath # Takes into account the setting of `:h 'path'`.
+:PoptoolsFindDir
+:PoptoolsBuffers
+:PoptoolsRecentFiles
+:PoptoolsCmdHistory
+:PoptoolsColorscheme
+:PoptoolsGrep # External grep, show results in a popup. Grep command is displayed.
+:PoptoolsVimgrep # Vimgrep, show results in the quickfix-list.
 ```
 
 ... and if you are curious, this is what I have in my `.vimrc`
 
 ```
-nnoremap <c-p> <cmd>PopupFindFile<cr><cr>
-nnoremap <c-p>f <cmd>PopupFindFile<cr>
-nnoremap <c-tab> <cmd>PopupBuffers<cr>
-nnoremap <c-p>h <cmd>PopupCmdHistory<cr>
-xnoremap <c-p>h <esc>PopupCmdHistory<cr>
-nnoremap <c-p>d <cmd>PopupFindDir<cr>
-nnoremap <c-p>o <cmd>PopupRecentFiles<cr>
-nnoremap <c-p>g <cmd>PopupGrep<cr>
+nnoremap <c-p> <cmd>PoptoolsFindFile<cr><cr>
+nnoremap <c-p>f <cmd>PoptoolsFindFile<cr>
+nnoremap <c-tab> <cmd>PoptoolsBuffers<cr>
+nnoremap <c-p>h <cmd>PoptoolsCmdHistory<cr>
+xnoremap <c-p>h <esc>PoptoolsCmdHistory<cr>
+nnoremap <c-p>d <cmd>PoptoolsFindDir<cr>
+nnoremap <c-p>o <cmd>PoptoolsRecentFiles<cr>
+nnoremap <c-p>g <cmd>PoptoolsGrep<cr>
 ```
 
 ## Few notes
@@ -69,4 +73,64 @@ files inside the `.vim` folder.
 ### Folder search
 
 To find hidden folders with `PopupFindDir` command, just add a `.` in front of
-the search pattern, e.g. `.git*`.
+the search pattern, e.g. `.git*`. That will return e.g. `.git/, .github/`,
+etc.
+
+## Configuration
+
+If you don't like the default behavior, there is room for some customization.
+You can do it through Vim the options `:h 'wildignore'`, `:h 'wildoptions'`
+and `:h 'path'` and/or through the `g:poptools_config` dictionary that you can
+set as it follows. But first or all, be sure to create an empty dictionary in
+your `.vimrc` file, i.e. `g:poptools_config = {}`.
+
+### Preview window
+
+You may not want the preview window in every case. For example, you want it
+when you _grep_ but not when you open recent files. You can specify when you
+want the following keys:
+
+```
+ 'preview_file',
+ 'preview_file_in_path',
+ 'preview_recent_files',
+ 'preview_buffer',
+ 'preview_grep'.
+```
+
+You can for example specify
+`g:poptools_config['preview_grep'] = true, g:poptools_config['preview_recent_files'] = false,`
+to have a preview window in your grep result list, but not in the recent files
+list. Here is an example of configuration:
+
+### grep command
+
+The default "grep" commands are:
+
+```
+  cmd_win_default = $'powershell -command "Set-Location -Path {cwd};gci -Recurse -Filter {files} | Select-String -Pattern {what} -CaseSensitive"'
+  cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {cwd}'
+```
+
+but you can override them by setting `g:poptools_config['cmd_win']` and
+`g:poptools_config['cmd_nix']`, respectively. You can use the placeholders
+`{what}`, `{files}`, and `{search_dir}` to specify the string to search (e.g.
+`foo`), the files pattern (e.g. `*.vim`) and the search folder (e.g.
+`~/myproject`), respectively. The values that you will be prompted to insert
+will be placed into such placeholders.
+
+The default "grep" commands are:
+
+```
+  cmd_win_default = $'powershell -command "Set-Location -Path {search_dir};gci -Recurse -Filter {files} | Select-String -Pattern {what} -CaseSensitive"'
+  cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {search_dir}'
+```
+
+It follows an example of configuration:
+
+```
+g:poptools_config = {}`
+g:poptools_config['cmd_win'] = $'powershell -command "gci -Recurse -Filter {files} | Select-String -Pattern {what}"'
+g:poptools_config['preview_grep'] = true
+g:poptools_config['preview_recent_files'] = false
+```
