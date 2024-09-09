@@ -112,11 +112,17 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
   # Clean the preview popup
   popup_settext(preview_id, repeat([""], popup_height))
   # populate the preview
-  popup_settext(preview_id, buf_lines)
+  # popup_settext(preview_id, buf_lines)
   #
   # TODO: Open all folds, it works only if you reselect the item in the popup
   # from below.
-  win_execute(preview_id, $'norm! zR')
+  # win_execute(preview_id, $'norm! zR')
+  win_execute(preview_id, $'setlocal number')
+  # echom buf_lines[0 : 10]
+  # win_execute(preview_id, $'append(4, ["pippo", "pluto"])')
+  setwinvar(preview_id, 'buf_lines', buf_lines)
+  win_execute(preview_id, 'append(1, w:buf_lines)')
+  win_execute(preview_id, $'normal! 20j')
   #
   # Syntax highlight
   win_execute(preview_id, set_filetype_cmd)
@@ -381,7 +387,7 @@ export def Grep()
     echom cmd_nix
   endif
 
-  var title = $" {search_dir} - Grep results for '{what}': "
+  var title = $" {fnamemodify(search_dir, ':~')} - Grep results for '{what}': "
   if !empty(results)
     results = map(results, (_, val) => substitute(val, '^\S\{-}\ze:', (m) => fnamemodify(m[0], ':.'), 'g'))
     ShowPopup(title, results, 'grep', what)
