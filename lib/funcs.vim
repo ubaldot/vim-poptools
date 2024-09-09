@@ -83,7 +83,6 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
   if bufexists(filename)
     file_content = getbufline(filename, 1, '$')
   elseif filereadable(expand(filename))
-    # We assume that the files in result are readable
     file_content = readfile($'{expand(filename)}')
   else
     echo $'File {filename} not readable!'
@@ -125,7 +124,7 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
 
   # Set preview ID title
   var preview_id_opts = popup_getoptions(preview_id)
-  preview_id_opts.title = fnamemodify(filename, ':t')
+  preview_id_opts.title = $' {fnamemodify(filename, ':t')} '
   popup_setoptions(preview_id, preview_id_opts)
 
   # Highlight search pattern
@@ -282,7 +281,7 @@ export def FindFileOrDir(search_type: string)
   endif
 
   # Main
-  var substring = input($"{getcwd()} - {search_type} to search ('enter' for all): ")
+  var substring = input($"{fnamemodify(getcwd(), ':~')} - {search_type} to search ('enter' for all): ")
   redraw
   echo "If the search takes too long hit CTRL-C few times and try to
         \ narrow down your search."
@@ -292,14 +291,14 @@ export def FindFileOrDir(search_type: string)
   if empty(results)
     echo $"'{substring}' pattern not found!"
   else
-    var title = $" {getcwd()}, {search_type}s '{substring}': "
+    var title = $" {fnamemodify(getcwd(), ':~')}, {search_type}s '{substring}': "
     if empty(substring)
-      title = $" Search results for {search_type}s in {getcwd()}: "
+      title = $" Search results for {search_type}s in {fnamemodify(getcwd(), ':~')}: "
     endif
 
     if search_type == 'file' || search_type == 'file_in_path'
       results ->filter('v:val !~ "\/$"')
-              ->filter((_, val) => filereadable(expand(val)))
+              # ->filter((_, val) => filereadable(expand(val)))
               ->map((_, val) => fnamemodify(val, ':.'))
     endif
     ShowPopup(title, results, search_type)
@@ -314,17 +313,17 @@ export def Vimgrep()
   endif
 
   # Main
-  var what = input($"{getcwd()} - What to find: ")
+  var what = input($"{fnamemodify(getcwd(), ':~')} - What to find: ")
   if empty(what)
     return
   endif
 
-  var where = input($"{getcwd()} - in which files: ")
+  var where = input($"{fnamemodify(getcwd(), ':~')} - in which files: ")
   if empty(where)
     where = '*'
   endif
 
-  var vimgrep_options = input($"{getcwd()} - vimgrep options (empty = 'gj'): ")
+  var vimgrep_options = input($"{fnamemodify(getcwd(), ':~')} - vimgrep options (empty = 'gj'): ")
   if empty(vimgrep_options)
     vimgrep_options = 'gj'
   endif
@@ -344,12 +343,12 @@ export def Grep()
   endif
 
   # Main
-  var what = input($"{getcwd()} - What to find: ")
+  var what = input($"{fnamemodify(getcwd(), ':~')} - What to find: ")
   if empty(what)
     return
   endif
 
-  var files = input($"{getcwd()} - in which files: ")
+  var files = input($"{fnamemodify(getcwd(), ':~')} - in which files: ")
   if empty(files)
     files = '*'
   endif
@@ -406,7 +405,7 @@ enddef
 
 export def RecentFiles()
   var results =  copy(v:oldfiles)
-    ->filter((_, val) => filereadable(expand(val)))
+    # ->filter((_, val) => filereadable(expand(val)))
     ->map((_, val) => fnamemodify(val, ':.'))
   var title = $" Recently opened files: "
   ShowPopup(title, results, 'recent_files')
