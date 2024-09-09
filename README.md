@@ -1,6 +1,6 @@
 # vim-poptools
 
-A simple plugin to show stuff in popup menus.
+An eye-candy, lazy plugin to search stuff.
 
 <p align="center">
 <img src="/vim_poptools.png" width="75%" height="75%">
@@ -26,8 +26,8 @@ In case you want to give it a try, consider that the commands for finding
 stuff take into account the setting of `:h 'wildignore'`, `:h 'wildoptions'`
 and `:h 'path'` options, depending on what you are searching, so if you want
 to include/exclude some search path, you must adjust such options. The rest of
-the configuration in case you don't like the default behavior is just
-straightforward.
+the configuration (in case you don't like the default behavior) is just
+straightforward, see below.
 
 ### Commands
 
@@ -35,28 +35,28 @@ At the moment the following is what you can search and show in popups. I guess
 the commands are self-explanatory:
 
 ```
-:PopupFindFile
-:PopupFindFileInPath # Takes into account the setting of `:h 'path'`.
-:PopupFindDir
-:PopupBuffers
-:PopupRecentFiles
-:PopupCmdHistory
-:PopupColorscheme
-:PopupGrep # External grep, show results in a popup. Grep command is displayed.
-:PopupVimgrep # Vimgrep, show results in the quickfix-list.
+:PoptoolsFindFile
+:PoptoolsFindFileInPath # Takes into account the setting of `:h 'path'`.
+:PoptoolsFindDir
+:PoptoolsBuffers
+:PoptoolsRecentFiles
+:PoptoolsCmdHistory
+:PoptoolsColorscheme
+:PoptoolsGrep # External grep, show results in a popup. Grep command is displayed.
+:PoptoolsVimgrep # Vimgrep, show results in the quickfix-list.
 ```
 
 ... and if you are curious, this is what I have in my `.vimrc`
 
 ```
-nnoremap <c-p> <cmd>PopupFindFile<cr><cr>
-nnoremap <c-p>f <cmd>PopupFindFile<cr>
-nnoremap <c-tab> <cmd>PopupBuffers<cr>
-nnoremap <c-p>h <cmd>PopupCmdHistory<cr>
-xnoremap <c-p>h <esc>PopupCmdHistory<cr>
-nnoremap <c-p>d <cmd>PopupFindDir<cr>
-nnoremap <c-p>o <cmd>PopupRecentFiles<cr>
-nnoremap <c-p>g <cmd>PopupGrep<cr>
+nnoremap <c-p> <cmd>PoptoolsFindFile<cr><cr>
+nnoremap <c-p>f <cmd>PoptoolsFindFile<cr>
+nnoremap <c-tab> <cmd>PoptoolsBuffers<cr>
+nnoremap <c-p>h <cmd>PoptoolsCmdHistory<cr>
+xnoremap <c-p>h <esc>PoptoolsCmdHistory<cr>
+nnoremap <c-p>d <cmd>PoptoolsFindDir<cr>
+nnoremap <c-p>o <cmd>PoptoolsRecentFiles<cr>
+nnoremap <c-p>g <cmd>PoptoolsGrep<cr>
 ```
 
 ## Few notes
@@ -73,7 +73,8 @@ files inside the `.vim` folder.
 ### Folder search
 
 To find hidden folders with `PopupFindDir` command, just add a `.` in front of
-the search pattern, e.g. `.git*`.
+the search pattern, e.g. `.git*`. That will return e.g. `.git/, .github/`,
+etc.
 
 ## Configuration
 
@@ -82,6 +83,25 @@ You can do it through Vim the options `:h 'wildignore'`, `:h 'wildoptions'`
 and `:h 'path'` and/or through the `g:poptools_config` dictionary that you can
 set as it follows. But first or all, be sure to create an empty dictionary in
 your `.vimrc` file, i.e. `g:poptools_config = {}`.
+
+### Preview window
+
+You may not want the preview window in every case. For example, you want it
+when you _grep_ but not when you open recent files. You can specify when you
+want the following keys:
+
+```
+ 'preview_file',
+ 'preview_file_in_path',
+ 'preview_recent_files',
+ 'preview_buffer',
+ 'preview_grep'.
+```
+
+You can for example specify
+`g:poptools_config['preview_grep'] = true, g:poptools_config['preview_recent_files'] = false,`
+to have a preview window in your grep result list, but not in the recent files
+list. Here is an example of configuration:
 
 ### grep command
 
@@ -105,24 +125,7 @@ The default "grep" commands are:
   cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {search_dir}'
 ```
 
-### Preview window
-
-You may not want the preview window in every case. For example, you want it
-when you _grep_ but not when you open recent files. You can specify when you
-want the following keys:
-
-```
- 'preview_file',
- 'preview_file_in_path',
- 'preview_recent_files',
- 'preview_buffer',
- 'preview_grep'.
-```
-
-You can for example specify
-`g:poptools_config['preview_grep'] = true, g:poptools_config['preview_recent_files'] = false,`
-to have a preview window in your grep result list, but not in the recent files
-list. Here is an example of configuration:
+It follows an example of configuration:
 
 ```
 g:poptools_config = {}`
