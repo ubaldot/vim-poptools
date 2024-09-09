@@ -2,7 +2,6 @@ vim9script
 
 var popup_width = &columns / 2
 var popup_height = &lines / 2
-var saved_colorscheme = execute('colorscheme')
 
 # ----- Callback functions
 def PopupCallbackGrep(id: number, preview_id: number, idx: number)
@@ -54,12 +53,10 @@ def PopupCallbackColorscheme(id: number, idx: number)
   if idx != -1
     var scheme = getbufline(winbufnr(id), idx)[0]
     exe $'colorscheme {scheme}'
-    saved_colorscheme = scheme
-    echom saved_colorscheme
   endif
 enddef
-# Filter functions
 
+# ------- Filter functions
 # You  may use external programs to count the lines if 'readfile()' is too
 # slow, e.g.
 # var file_length = has('win32') ? str2nr(system('...')) : str2nr(system($'wc -l {filename}')->matchstr('\s*\zs\d*'))
@@ -68,7 +65,8 @@ enddef
 #   : systemlist($'sed -n "{firstline},{lastline}p" {filename}')
 #
 # For the syntax highlight, you may use the 'GetFiletypeByFilename()' function
-def UpdatePreview(main_id: number, preview_id: number, search_pattern: string)
+#
+def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: string)
   # Parse the highlighted line on the main popup
   var idx = line('.', main_id)
 
@@ -89,15 +87,15 @@ def UpdatePreview(main_id: number, preview_id: number, search_pattern: string)
   var lastline = min([file_length, line_nr + popup_height / 2])
   var buf_lines = file_content[firstline - 1 : lastline]
 
-  # Add line numbers to the buflines: OBS! It may mess-up the syntax, e.g. the
-  # .md files are not correctly viewed. We keep it only foe the grep now.
+  # Add line numbers only to 'grep' because it messes up with the syntax, see
+  # e.g. what happens with .md files
   if !empty(search_pattern)
     for ii in range(0, len(buf_lines) - 1)
       buf_lines[ii] = $'{firstline + ii}   {buf_lines[ii]}'
     endfor
   endif
 
-  # Set filetype. No bulletproof!
+  # Set filetype. No bulletproof, but is seems to work reasonably well
   var buf_extension = $'{fnamemodify(filename, ":e")}'
   var found_filetypedetect_cmd = autocmd_get({group: 'filetypedetect'})->filter($'v:val.pattern =~ "*\\.{buf_extension}$"')
   var set_filetype_cmd = empty(found_filetypedetect_cmd)
@@ -123,7 +121,13 @@ def UpdatePreview(main_id: number, preview_id: number, search_pattern: string)
   endif
 enddef
 
-def ClosePopups(main_id: number, preview_id: number = -1)
+def ShowColorscheme(main_id: number)
+    var idx = line('.', main_id)
+    var scheme = getbufline(winbufnr(main_id), idx)[0]
+    exe $'colorscheme {scheme}'
+enddef
+
+def ClosePopups(main_id: number, preview_id: number)
     if preview_id != -1
       popup_close(preview_id)
     endif
@@ -138,11 +142,11 @@ def PopupFilter(main_id: number, preview_id: number, key: string, search_pattern
   # Handle shortcuts
   if index(['j', "\<down>", "\<c-n>"], key) != -1
     win_execute(main_id, 'norm j')
-    UpdatePreview(main_id, preview_id, search_pattern)
+    UpdateFilePreview(main_id, preview_id, search_pattern)
     return true
   elseif index(['k', "\<Up>", "\<c-p>"], key) != -1
     win_execute(main_id, 'norm k')
-    UpdatePreview(main_id, preview_id, search_pattern)
+    UpdateFilePreview(main_id, preview_id, search_pattern)
     return true
   elseif key == "\<esc>"
     ClosePopups(main_id, preview_id)
@@ -152,13 +156,7 @@ def PopupFilter(main_id: number, preview_id: number, key: string, search_pattern
   endif
 enddef
 
-def ShowColorscheme(main_id: number)
-    var idx = line('.', main_id)
-    var scheme = getbufline(winbufnr(main_id), idx)[0]
-    exe $'colorscheme {scheme}'
-enddef
-
-def PopupFilterColor(main_id: number, key: string): bool
+def PopupFilterColor(main_id: number, key: string, current_colorscheme: string): bool
   # Handle shortcuts
   if index(['j', "\<down>", "\<c-n>"], key) != -1
     win_execute(main_id, 'norm j')
@@ -169,17 +167,19 @@ def PopupFilterColor(main_id: number, key: string): bool
     ShowColorscheme(main_id)
     return true
   elseif key == "\<esc>"
-    ClosePopups(main_id)
-    exe $'colorscheme {saved_colorscheme}'
+    ClosePopups(main_id, -1)
+    exe $'colorscheme {current_colorscheme}'
     return true
   else
     return popup_filter_menu(main_id, key)
   endif
 enddef
 #
-# MAIN
+# -------- MAIN
 def ShowPopup(title: string, results: list<string>, search_type: string, search_pattern: string = '')
 
+  # TODO: why you have the ^@ at the beginning of execute('colorscheme') ???
+  var current_colorscheme = execute('colorscheme')->substitute('\n', '', 'g')
   # Standard options
   var opts = {
     title: title,
@@ -197,7 +197,6 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
 
   # Preview handling
   var preview_id = -1
-  # TODO Organize the conditions for show_preview
   var show_preview = index(['file', 'recent_files', 'buffer', 'grep'], search_type) != -1
   # show_preview = false
   if show_preview
@@ -211,7 +210,6 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     opts.maxheight = &lines / 2
 
     # Opts for preview_id
-    # TODO: with recent files is not very nice.
     opts.col = popup_width + popup_width / 2 + 2
     preview_id = popup_create("I AM THE PREVIEW! MWAHAHAHA!", opts)
 
@@ -221,11 +219,16 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     var scrollbar_contrib = len(results) > opts.minheight ? 1 : 0
     opts.col = popup_width - popup_width / 2 - 2 - scrollbar_contrib
 
-    UpdatePreview(main_id, preview_id, search_pattern)
+    UpdateFilePreview(main_id, preview_id, search_pattern)
   endif
 
   if search_type == 'color'
-    opts.filter = PopupFilterColor
+    opts.filter = (id, key) => PopupFilterColor(id, key, current_colorscheme)
+    var init_highlight_location = index(results, current_colorscheme)
+    # echom results
+    # echom current_colorscheme
+    # echom init_highlight_location
+    win_execute(main_id, $'norm {init_highlight_location + 1}j')
   endif
 
   # Callback switch for main popup
@@ -238,14 +241,11 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     PopupCallback = (id, idx) => PopupCallbackHistory(id, preview_id, idx)
   elseif search_type == 'grep'
     PopupCallback = (id, idx) => PopupCallbackGrep(id, preview_id, idx)
+  elseif search_type == 'color'
+    PopupCallback = PopupCallbackColorscheme
   endif
 
-  # Set callback for the main popup
-  if search_type != 'color'
-    opts.callback = PopupCallback
-  else
-    opts.callback = PopupCallbackColorscheme
-  endif
+  opts.callback = PopupCallback
   popup_setoptions(main_id, opts)
 enddef
 
