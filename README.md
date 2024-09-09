@@ -10,7 +10,7 @@ Exploit popups as much as you can!
 * Vim-poptools *
 </p>
 
-This plugin aims at boosting your productivity by conveniently use plugin for
+This plugin aims at boosting your productivity by conveniently use popups for
 a multitude of tasks, from finding files and directories, to set your favorite
 colorscheme.
 
