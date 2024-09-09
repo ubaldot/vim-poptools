@@ -79,7 +79,12 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
     : str2nr(getbufline(winbufnr(main_id), idx)[0]->matchstr(':\zs\d*\ze:'))
 
   # Select the portion of buffer to show in the preview
-  var file_content = readfile($'{expand(filename)}')
+  var file_content = []
+  if bufexists(filename)
+    file_content = getbufline(filename, 1, '$')
+  else
+    file_content = readfile($'{expand(filename)}')
+  endif
 
   var firstline = max([1, line_nr - popup_height / 2])
   var file_length = len(file_content)
