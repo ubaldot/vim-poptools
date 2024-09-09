@@ -82,8 +82,12 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
   var file_content = []
   if bufexists(filename)
     file_content = getbufline(filename, 1, '$')
-  else
+  elseif filereadable(expand(filename))
+    # We assume that the files in result are readable
     file_content = readfile($'{expand(filename)}')
+  else
+    echo $'File {filename} not readable!'
+    file_content = [$'File {filename} not readable!']
   endif
 
   var firstline = max([1, line_nr - popup_height / 2])
@@ -121,7 +125,7 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
 
   # Set preview ID title
   var preview_id_opts = popup_getoptions(preview_id)
-  preview_id_opts.title = $' {filename} '
+  preview_id_opts.title = fnamemodify(filename, ':t')
   popup_setoptions(preview_id, preview_id_opts)
 
   # Highlight search pattern
@@ -296,6 +300,7 @@ export def FindFileOrDir(search_type: string)
     if search_type == 'file' || search_type == 'file_in_path'
       results ->filter('v:val !~ "\/$"')
               ->filter((_, val) => filereadable(expand(val)))
+              ->map((_, val) => fnamemodify(val, ':.'))
     endif
     ShowPopup(title, results, search_type)
   endif
@@ -367,20 +372,28 @@ export def Grep()
   var results = []
   if has('win32')
     # In windows we get rid of the ^M and we filter eventual blank lines
-    results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '', 'g'))->filter('v:val != ""')
+    # results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '', 'g'))->filter('v:val != ""')
+    results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '', 'g'))->filter((_, val) => filereadable(expand(val)))
     echom cmd_win
   else
     # get rid of eventual blank lines
-    results = systemlist(cmd_nix)->filter('v:val != ""')
+    # results = systemlist(cmd_nix)->filter((_, val) => filereadable(expand(val)))
+    results = systemlist(cmd_nix)
     echom cmd_nix
   endif
 
   var title = $" {search_dir} - Grep results for '{what}': "
-  ShowPopup(title, results, 'grep', what)
+  if !empty(results)
+    results = map(results, (_, val) => substitute(val, '^\S\{-}\ze:', (m) => fnamemodify(m[0], ':.'), 'g'))
+    ShowPopup(title, results, 'grep', what)
+  else
+    echoerr $"pattern '{what}' not found!"
+  endif
 enddef
 
 export def Buffers()
   var results = getcompletion('', 'buffer', true)
+                ->map((_, val) => fnamemodify(val, ':.'))
   var title = " Buffers: "
   ShowPopup(title, results, 'buffer')
 enddef
@@ -394,8 +407,7 @@ enddef
 export def RecentFiles()
   var results =  copy(v:oldfiles)
     ->filter((_, val) => filereadable(expand(val)))
-    # ENABLE IF YOU WANT RELATIVE PATH
-    # ->map((_, val) => fnamemodify(val, ':.'))
+    ->map((_, val) => fnamemodify(val, ':.'))
   var title = $" Recently opened files: "
   ShowPopup(title, results, 'recent_files')
 enddef
