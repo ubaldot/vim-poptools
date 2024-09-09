@@ -122,7 +122,7 @@ will be placed into such placeholders.
 The default "grep" commands are:
 
 ```
-  cmd_win_default = $'powershell -command "Set-Location -Path {search_dir};gci -Recurse -Filter {files} | Select-String -Pattern {what} -CaseSensitive"'
+  cmd_win_default = $'findstr /C:{shellescape(what)} /N /S {files} {shellescape(search_dir)}'
   cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {search_dir}'
 ```
 

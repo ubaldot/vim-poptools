@@ -346,12 +346,12 @@ export def Grep()
 
   var cmd = ''
   var search_dir = get(g:poptools_config, 'search_dir', $'{getcwd()}')
-  if has('win32') && exists('+shellslash') && !&shellslash
-    # on windows, need to handle backslash
-    search_dir->substitute('\\', '/', 'g')
-  endif
+  # if has('win32') && exists('+shellslash') && !&shellslash
+  #   # on windows, need to handle backslash
+  #   search_dir->substitute('\\', '/', 'g')
+  # endif
 
-  var cmd_win_default = $'powershell -command "Set-Location -Path {search_dir};gci -Recurse -Filter {files} | Select-String -Pattern {what} -CaseSensitive"'
+  var cmd_win_default = $'findstr /C:{shellescape(what)} /N /S {files} {shellescape(search_dir)}'
   var cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {search_dir}'
 
   var cmd_win = get(g:poptools_config, 'grep_cmd_win', cmd_win_default)
