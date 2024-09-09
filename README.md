@@ -10,13 +10,17 @@ Exploit popups as much as you can!
 * Vim-poptools *
 </p>
 
+This plugin aims at boosting your productivity by conveniently use plugin for
+a multitude of tasks, from finding files and directories, to set your favorite
+colorscheme.
+
 It is not feature rich and performing as other plugins like
 [fzf](https://github.com/junegunn/fzf.vim),
 [fuzzyy](https://github.com/Donaldttt/fuzzyy) or
 [scope](https://github.com/girishji/scope.vim), but it supports my everyday
 job pretty well. I personally like how it displays information but it may be a
-bit slower compared to similar plugins - this is synchronous, whereas other
-plugins are typically asynchronous.
+bit slower compared to the mentioned plugins being it synchronous, whereas the
+others are typically asynchronous.
 
 Nevertheless, I don't mind to wait a bit if the search process takes a while:
 it helps me in pausing and reflecting on what I am doing and give some breath
@@ -81,8 +85,10 @@ etc.
 If you don't like the default behavior, there is room for some customization.
 You can do it through Vim the options `:h 'wildignore'`, `:h 'wildoptions'`
 and `:h 'path'` and/or through the `g:poptools_config` dictionary that you can
-set as it follows. But first or all, be sure to create an empty dictionary in
-your `.vimrc` file, i.e. `g:poptools_config = {}`.
+set as it follows.
+
+But first or all, be sure to create an empty dictionary in your `.vimrc` file,
+i.e. `g:poptools_config = {}`.
 
 ### Preview window
 
@@ -105,26 +111,20 @@ list. Here is an example of configuration:
 
 ### grep command
 
-The default "grep" commands are:
-
-```
-  cmd_win_default = $'powershell -command "Set-Location -Path {cwd};gci -Recurse -Filter {files} | Select-String -Pattern {what} -CaseSensitive"'
-  cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {cwd}'
-```
-
-but you can override them by setting `g:poptools_config['cmd_win']` and
-`g:poptools_config['cmd_nix']`, respectively. You can use the placeholders
-`{what}`, `{files}`, and `{search_dir}` to specify the string to search (e.g.
-`foo`), the files pattern (e.g. `*.vim`) and the search folder (e.g.
-`~/myproject`), respectively. The values that you will be prompted to insert
-will be placed into such placeholders.
-
-The default "grep" commands are:
+The default "grep" commands are the following:
 
 ```
   cmd_win_default = $'findstr /C:{shellescape(what)} /N /S {files} {shellescape(search_dir)}'
-  cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {search_dir}'
+  cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {cwd}'
 ```
+
+However, you can override them by setting `g:poptools_config['cmd_win']` and
+`g:poptools_config['cmd_nix']`, respectively.
+
+You can use the placeholders `{what}`, `{files}`, and `{search_dir}` to
+specify the string to search (e.g. `foo`), the files pattern (e.g. `*.vim`)
+and the search folder (e.g. `~/myproject`), respectively. The values that you
+will be prompted to insert will be placed into such placeholders.
 
 It follows an example of configuration:
 
