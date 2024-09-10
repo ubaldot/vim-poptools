@@ -367,8 +367,10 @@ export def Grep()
 
   var cmd = ''
 
-  var cmd_win_default = $'findstr /C:{shellescape(what)} /N /S {files}'
-  # var cmd_win_default = $'powershell -command "Set-Location -Path {search_dir};gci -Recurse -Filter {files} | Select-String -Pattern {what} -CaseSensitive"'
+  var cmd_win_default = $'findstr /C:{shellescape(what)} /N /S {files}"'
+  # var tmp = $"Set-Location -Path {search_dir};gci -Recurse -Filter {files} | Select-String -Pattern {what} -CaseSensitive"
+  # tmp = $"Set-Location -Path {search_dir};gci -Recurse -Filter {files} | Where-Object \{ -not (\$_.FullName -match '\\\\\\.[^\\\\]*') \} |  Select-String -Pattern {what} -CaseSensitive"
+  # var cmd_win_default = $'powershell -command "{tmp}"'
   var cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {search_dir}'
 
   var cmd_win = get(g:poptools_config, 'grep_cmd_win', cmd_win_default)
