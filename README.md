@@ -10,21 +10,18 @@ Exploit popups as much as you can!
 * Vim-poptools *
 </p>
 
-This plugin aims at boosting your productivity by conveniently use popups for
+This plugin aims at scaling your productivity by conveniently using popups for
 a multitude of tasks, from finding files and directories, to set your favorite
 colorscheme.
 
-It is not feature rich and performing as other plugins like
+It is slower compared to other plugins like
 [fzf](https://github.com/junegunn/fzf.vim),
 [fuzzyy](https://github.com/Donaldttt/fuzzyy) or
-[scope](https://github.com/girishji/scope.vim), but it supports my everyday
-job pretty well. I personally like how it displays information but it may be a
-bit slower compared to the mentioned plugins being it synchronous, whereas the
-others are typically asynchronous.
-
-Nevertheless, I don't mind to wait a bit if the search process takes a while:
-it helps me in pausing and reflecting on what I am doing and give some breath
-to my brain. :)
+[scope](https://github.com/girishji/scope.vim) (this plugin is synchronous
+whereas the other are asynchronous) but I don't mind to wait a bit if the
+search process takes a while: it helps me in pausing and reflecting on what I
+am doing and give some breath to my brain. :) Nevertheless, I also like the
+way it displays information and it configures in a very easy way.
 
 In case you want to give it a try, consider that the commands for finding
 stuff take into account the setting of `:h 'wildignore'`, `:h 'wildoptions'`
@@ -50,7 +47,7 @@ the commands are self-explanatory:
 :PoptoolsVimgrep # Vimgrep, show results in the quickfix-list.
 ```
 
-... and if you are curious, the following is how I mapped them:
+... and if you are curious, the following is how I mapped them in my `.vimrc`:
 
 ```
 nnoremap <c-p> <cmd>PoptoolsFindFile<cr><cr>
@@ -112,8 +109,6 @@ list.
 You can avoid using syntax highlight in the preview window by setting
 `g:poptools_config['preview_syntax'] = false`. This is useful in case you are
 encountering troubles when using the preview window.
-
-Here is an example of configuration:
 
 ### grep command
 
