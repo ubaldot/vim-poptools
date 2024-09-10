@@ -99,8 +99,8 @@ You can do it through Vim the options `:h 'wildignore'`, `:h 'wildoptions'`
 and `:h 'path'` and/or through the `g:poptools_config` dictionary that you can
 set as it follows.
 
-But first or all, be sure to create an empty dictionary in your `.vimrc` file,
-i.e. `g:poptools_config = {}`.
+To do that, be sure to create an empty dictionary in your `.vimrc` file, i.e.
+`g:poptools_config = {}`.
 
 ### Preview window
 
