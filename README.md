@@ -20,8 +20,7 @@ It is slower compared to other plugins like
 [scope](https://github.com/girishji/scope.vim) (this plugin is synchronous
 whereas the others are asynchronous) but I don't mind to wait a bit if the
 search process takes a while: it helps me in pausing and reflecting on what I
-am doing and give some breath to my brain. :) Nevertheless, I also like the
-way it displays information and it configures in a very easy way.
+am doing thus giving some breath to my brain.
 
 ### Commands
 
