@@ -121,11 +121,14 @@ You can for example specify
 to have a preview window in your grep result list, but not in the recent files
 list.
 
-You can avoid using syntax highlight in the preview window by setting
-`g:poptools_config['preview_syntax'] = false`. This is useful in case you are
-encountering troubles when using the preview window.
+Syntax highlight in the preview can be handy, but it may slow down the user
+experience. You can avoid using syntax highlight in the preview window by
+setting `g:poptools_config['preview_syntax'] = false`. This is useful in case
+you are encountering troubles when using the preview window. The match are
+still highlighted.
 
-All the boolean values in the `g:poptools_config` are set to true as default.
+All the boolean values in the `g:poptools_config` are set to `true` as
+default.
 
 It follows an example of configuration:
 
