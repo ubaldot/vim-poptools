@@ -340,14 +340,15 @@ export def Grep()
   if empty(what)
     return
   endif
+  var search_dir = get(g:poptools_config, 'search_dir', $'{getcwd()}')
 
   var files = input($"{fnamemodify(getcwd(), ':~')} - in which files ('empty' for current file, '*' for all files): ")
   if empty(files)
-    files = expand('%:t')
+    search_dir = expand('%:h:.')
+    files = expand("%:t")
   endif
 
   var cmd = ''
-  var search_dir = get(g:poptools_config, 'search_dir', $'{getcwd()}')
   # if has('win32') && exists('+shellslash') && !&shellslash
   #   # on windows, need to handle backslash
   #   search_dir->substitute('\\', '/', 'g')
