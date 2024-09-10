@@ -1,5 +1,6 @@
 vim9script
 
+# TODO Exclude 'wildignore' paths in Grep (it uses an external program)
 # TODO Study how can you make them parametric
 var popup_width = &columns / 2
 var popup_height = &lines / 2
@@ -367,6 +368,7 @@ export def Grep()
   var cmd = ''
 
   var cmd_win_default = $'findstr /C:{shellescape(what)} /N /S {files}'
+  # var cmd_win_default = $'powershell -command "Set-Location -Path {search_dir};gci -Recurse -Filter {files} | Select-String -Pattern {what} -CaseSensitive"'
   var cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {search_dir}'
 
   var cmd_win = get(g:poptools_config, 'grep_cmd_win', cmd_win_default)

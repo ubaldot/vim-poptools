@@ -24,11 +24,11 @@ am doing and give some breath to my brain. :) Nevertheless, I also like the
 way it displays information and it configures in a very easy way.
 
 In case you want to give it a try, consider that the commands for finding
-stuff take into account the setting of `:h 'wildignore'`, `:h 'wildoptions'`
-and `:h 'path'` options, depending on what you are searching, so if you want
-to include/exclude some search path, you must adjust such options. The rest of
-the configuration (in case you don't like the default behavior) is just
-straightforward, see below.
+stuff (with exception of `PopupGrep`) take into account the setting of
+`:h 'wildignore'`, `:h 'wildoptions'` and `:h 'path'` options, depending on
+what you are searching, so if you want to include/exclude some search path,
+you must adjust such options. The rest of the configuration (in case you don't
+like the default behavior) is just straightforward, see below.
 
 ### Commands
 
