@@ -84,7 +84,7 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
   var file_content = []
   if bufexists(filename)
     file_content = getbufline(filename, 1, '$')
-  # Extra check if the file is readable or not
+  # TODO: Extra check if the file is readable or not
   elseif filereadable($'{expand(filename)}')
     file_content = readfile($'{expand(filename)}')
   else
@@ -335,6 +335,7 @@ export def Grep()
   endif
 
   # Main
+  # TODO fnamemodify(getcwd(), ':.') does not work
   var what = input($"{fnamemodify(getcwd(), ':~')} - What to find: ")
   if empty(what)
     return
@@ -375,13 +376,11 @@ export def Grep()
 
   var title = $" {search_dir} - Grep results for '{what}': "
   if !empty(results)
-    results ->matchstr('^\S\{-}\ze:')
+    results->matchstr('^\S\{-}\ze:')
             ->filter((_, val) => filereadable(expand(val)))
-            ->map((_, val) => substitute(val, '^\S\{-}\ze:', (m) => fnamemodify(m[0], ':.'), 'g'))
-            # ->map((_, val) => substitute(val, '\(.\{100\}\).*', '\1', 'g'))
-    # results = results->map((_, val) => val[0 : popup_width])
+            # TODO: See if you can do better
+    results = results->map((_, val) => substitute(val, '^\S\{-}\ze:', (m) => fnamemodify(m[0], ':.'), 'g'))
 
-    # exe "Redir echom " .. string(results)
     ShowPopup(title, results, 'grep', what)
   else
     echoerr $"pattern '{what}' not found!"
