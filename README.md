@@ -107,7 +107,13 @@ want the following keys:
 You can for example specify
 `g:poptools_config['preview_grep'] = true, g:poptools_config['preview_recent_files'] = false,`
 to have a preview window in your grep result list, but not in the recent files
-list. Here is an example of configuration:
+list.
+
+You can avoid using syntax highlight in the preview window by setting
+`g:poptools_config['preview_syntax'] = false`. This is useful in case you are
+encountering troubles when using the preview window.
+
+Here is an example of configuration:
 
 ### grep command
 

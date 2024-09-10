@@ -17,7 +17,7 @@ def PopupCallbackGrep(id: number, preview_id: number, idx: number)
     var line = selection->matchstr(':\zs\d*\ze:')
     # TODO: if I remove silent, then I get e363. Try to run e.g.
     # :edit /home/yt75534/dymoval/src/dymoval_tutorial/dymoval_tutorial.ipynb
-    silent! exe 'edit ' .. file
+    exe 'edit ' .. file
     cursor(str2nr(line), 1)
   endif
 enddef
@@ -80,7 +80,6 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
     ? popup_height / 2
     : str2nr(getbufline(winbufnr(main_id), idx)[0]->matchstr(':\zs\d*\ze:'))
 
-  # Select the portion of buffer to show in the preview
   var file_content = []
   if bufexists(filename)
     file_content = getbufline(filename, 1, '$')
@@ -90,14 +89,6 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
   else
     file_content = ["Can't preview the file!"]
   endif
-
-
-  # Set filetype. No bulletproof, but is seems to work reasonably well
-  var buf_extension = $'{fnamemodify(filename, ":e")}'
-  var found_filetypedetect_cmd = autocmd_get({group: 'filetypedetect'})->filter($'v:val.pattern =~ "*\\.{buf_extension}$"')
-  var set_filetype_cmd = empty(found_filetypedetect_cmd)
-     ? '&filetype = ""'
-     : found_filetypedetect_cmd[0].cmd
 
   # Set options
   win_execute(preview_id, $'setlocal number')
@@ -116,9 +107,22 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
     win_execute(preview_id, $'setlocal cursorline')
     win_execute(preview_id, $'match Search /{search_pattern}/')
   endif
-  #
-  # TODO: Syntax highlight if it creates problems, disable it
-  win_execute(preview_id, set_filetype_cmd)
+
+  # TODO: Syntax highlight if it creates problems, disable it. It is not
+  # bulletproof
+  if get(g:poptools_config, 'preview_syntax', true)
+    # set 'synmaxcol' for avoiding crashing if some readable file has embedded
+    # figures.
+    var old_synmaxcol = &synmaxcol
+    &synmaxcol = 300
+    var buf_extension = $'{fnamemodify(filename, ":e")}'
+    var found_filetypedetect_cmd = autocmd_get({group: 'filetypedetect'})->filter($'v:val.pattern =~ "*\\.{buf_extension}$"')
+    var set_filetype_cmd = empty(found_filetypedetect_cmd)
+       ? '&filetype = ""'
+       : found_filetypedetect_cmd[0].cmd
+    win_execute(preview_id, set_filetype_cmd)
+    &synmaxcol = old_synmaxcol
+  endif
 
   # Set preview ID title
   var preview_id_opts = popup_getoptions(preview_id)
@@ -378,7 +382,7 @@ export def Grep()
     echom cmd_nix
   endif
 
-  var title = $" {search_dir} - Grep results for '{what}': "
+  var title = $" {search_dir} - Grep results for '{what}' in '{files}': "
   if !empty(results)
     results->matchstr('^\S\{-}\ze:')
             ->filter((_, val) => filereadable(expand(val)))
