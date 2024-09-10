@@ -172,8 +172,8 @@ def PopupFilterColor(main_id: number, key: string, current_colorscheme: string):
     return true
   elseif key == "\<esc>"
     ClosePopups(main_id, -1)
-    # TODO: BUG
-    # exe $'colorscheme {current_colorscheme}'
+    # TODO: Colorscheme BUG
+    exe $'colorscheme {current_colorscheme}'
     return true
   else
     return popup_filter_menu(main_id, key)
