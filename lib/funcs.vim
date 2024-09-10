@@ -1,7 +1,7 @@
 vim9script
 
 # TODO Exclude 'wildignore' paths in Grep (it uses an external program)
-# TODO Study how can you make them parametric
+# TODO Study how can you make popup_width and popup_height them parametric
 var popup_width = &columns / 2
 var popup_height = &lines / 2
 
@@ -394,6 +394,8 @@ export def Grep()
 
   var title = $" {fnamemodify(search_dir, ':~')} - Grep results for '{what}' in '{files}': "
   if !empty(results)
+    # Results from grep are given in the form path/to/file.ext:num: and we
+    # have to extract only the filename from there
     results->matchstr('^\S\{-}\ze:')
             ->filter((_, val) => filereadable(expand(val)))
             # TODO: See if you can do better
