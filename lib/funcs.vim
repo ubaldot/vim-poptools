@@ -384,7 +384,7 @@ export def Grep()
     results = results->map((_, val) => substitute(val, '^\S\{-}\ze:', (m) => fnamemodify(m[0], ':.'), 'g'))
 
     ShowPopup(title, results, 'grep', what)
-  elseif !has('win32')
+  elseif has('win32')
     echoerr $"pattern '{what}' not found! Are you in the correct directory?"
   else
     echoerr $"pattern '{what}' not found!"
