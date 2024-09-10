@@ -384,7 +384,6 @@ export def Grep()
     # results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '', 'g'))->filter('v:val != ""')
     # TODO Hidden files are shown and there is no filter for filereadable()
     results = systemlist(cmd_win)
-    echom cmd_win
   else
     # get rid of eventual blank lines
     # results = systemlist(cmd_nix)->filter((_, val) => filereadable(expand(val)))
