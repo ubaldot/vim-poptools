@@ -290,6 +290,8 @@ export def FindFileOrDir(search_type: string)
   endif
 
   # Main
+
+
   var substring = input($"{fnamemodify(getcwd(), ':~')} - {search_type} to search ('enter' for all): ")
   redraw
   echo "If the search takes too long hit CTRL-C few times and try to
