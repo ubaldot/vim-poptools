@@ -10,11 +10,13 @@ def PopupCallbackGrep(id: number, preview_id: number, idx: number)
       popup_close(preview_id)
     endif
 
-    var selection = getbufline(winbufnr(id), idx)[0]
+    var selection_split = split(getbufline(winbufnr(id), idx)[0], ':')
     # grep return format is '/path/to/file.xyz:76: ...'
     # You must extract the filename and the line number
-    var file = selection->matchstr('^\S\{-}\ze:')
-    var line = selection->matchstr(':\zs\d*\ze:')
+    # var file = selection->matchstr('^\S\{-}\ze:')
+    # var line = selection->matchstr(':\zs\d*\ze:')
+    var file = selection_split[0]
+    var line = selection_split[1]
     exe $'edit {file}'
     cursor(str2nr(line), 1)
   endif
@@ -70,23 +72,17 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
   # Parse the highlighted line on the main popup
   var idx = line('.', main_id)
 
-  var filename = empty(search_pattern)
-    ? getbufline(winbufnr(main_id), idx)[0]
-    : getbufline(winbufnr(main_id), idx)[0]->matchstr('^\S\{-}\ze:')
-
+  var filename = split(getbufline(winbufnr(main_id), idx)[0], ':')[0]
   var line_nr = empty(search_pattern)
     ? popup_height / 2
-    : str2nr(getbufline(winbufnr(main_id), idx)[0]->matchstr(':\zs\d*\ze:'))
+    : split(getbufline(winbufnr(main_id), idx)[0], ':')[1]
 
   # Select the portion of buffer to show in the preview
   var file_content = []
   if bufexists(filename)
     file_content = getbufline(filename, 1, '$')
-  elseif filereadable(expand(filename))
-    file_content = readfile($'{expand(filename)}')
   else
-    echo $'File {filename} not readable!'
-    file_content = [$'File {filename} not readable!']
+    file_content = readfile($'{expand(filename)}')
   endif
 
   var firstline = max([1, line_nr - popup_height / 2])
@@ -298,10 +294,11 @@ export def FindFileOrDir(search_type: string)
 
     if search_type == 'file' || search_type == 'file_in_path'
       results ->filter('v:val !~ "\/$"')
-              # ->filter((_, val) => filereadable(expand(val)))
-              ->map((_, val) => fnamemodify(val, ':.'))
+              ->filter((_, val) => filereadable(expand(val)))
+              ->map((_, val) => fnamemodify(split(val, ':')[0], ':.'))
     endif
-    ShowPopup(title, results, search_type)
+    exe "Redir echom " .. string(results)
+    # ShowPopup(title, results, search_type)
   endif
 enddef
 
@@ -372,7 +369,7 @@ export def Grep()
   if has('win32')
     # In windows we get rid of the ^M and we filter eventual blank lines
     # results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '', 'g'))->filter('v:val != ""')
-    results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '', 'g'))->filter((_, val) => filereadable(expand(val)))
+    results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '', 'g'))
     echom cmd_win
   else
     # get rid of eventual blank lines
@@ -383,7 +380,9 @@ export def Grep()
 
   var title = $" {search_dir} - Grep results for '{what}': "
   if !empty(results)
-    results = map(results, (_, val) => substitute(val, '^\S\{-}\ze:', (m) => fnamemodify(m[0], ':.'), 'g'))
+    # remove non readable files
+    # results->filter('filereadable(expand(split(v:val, ":")[0])')
+    results->map(split(v:val, ":")[0])->filter('filereadable(expand(v:val))')
     ShowPopup(title, results, 'grep', what)
   else
     echoerr $"pattern '{what}' not found!"
@@ -392,7 +391,7 @@ enddef
 
 export def Buffers()
   var results = getcompletion('', 'buffer', true)
-                ->map((_, val) => fnamemodify(val, ':.'))
+              ->map((_, val) => fnamemodify(split(val, ':')[0], ':.'))
   var title = " Buffers: "
   ShowPopup(title, results, 'buffer')
 enddef
@@ -405,8 +404,7 @@ enddef
 
 export def RecentFiles()
   var results =  copy(v:oldfiles)
-    # ->filter((_, val) => filereadable(expand(val)))
-    ->map((_, val) => fnamemodify(val, ':.'))
+    ->filter((_, val) => filereadable(expand(val)))
   var title = $" Recently opened files: "
   ShowPopup(title, results, 'recent_files')
 enddef
