@@ -91,6 +91,7 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
     file_content = ["Can't preview the file!"]
   endif
 
+
   # Set filetype. No bulletproof, but is seems to work reasonably well
   var buf_extension = $'{fnamemodify(filename, ":e")}'
   var found_filetypedetect_cmd = autocmd_get({group: 'filetypedetect'})->filter($'v:val.pattern =~ "*\\.{buf_extension}$"')
@@ -107,6 +108,7 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
   # populate the preview
   setwinvar(preview_id, 'buf_lines', file_content)
   win_execute(preview_id, 'append(0, w:buf_lines)')
+  win_execute(preview_id, 'norm! zR')
 
   # Highlight grep matches
   if !empty(search_pattern)
@@ -115,7 +117,7 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
     win_execute(preview_id, $'match Search /{search_pattern}/')
   endif
   #
-  # Syntax highlight
+  # TODO: Syntax highlight if it creates problems, disable it
   win_execute(preview_id, set_filetype_cmd)
 
   # Set preview ID title
