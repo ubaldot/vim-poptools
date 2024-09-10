@@ -54,7 +54,7 @@ nnoremap <c-p>g <cmd>PoptoolsGrep<cr>
 
 ## File search
 
-# `PoptoolsFindFile` and `PoptoolsFindInPath`
+`PoptoolsFindFile` and `PoptoolsFindInPath`
 
 These commands take into account the setting of `:h 'wildignore'`,
 `:h 'wildoptions'` and `:h 'path'` options, so if you want to include/exclude
@@ -67,7 +67,7 @@ folders. To find files in a hidden folder, you must first `cd` into such a
 folder. For example, `cd ~/.vim` followed by `PopupFindFiles` will search
 files inside the `.vim` folder.
 
-# `PoptoolsGrep`
+`PoptoolsGrep`
 
 This command uses an external "grep" program and therefore it is not affected
 by the Vim options settings. The default "grep" commands are the following:
