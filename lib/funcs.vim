@@ -341,9 +341,9 @@ export def Grep()
     return
   endif
 
-  var files = input($"{fnamemodify(getcwd(), ':~')} - in which files: ")
+  var files = input($"{fnamemodify(getcwd(), ':~')} - in which files ('empty' for current file, '*' for all files): ")
   if empty(files)
-    files = '*'
+    files = expand('%:t')
   endif
 
   var cmd = ''
