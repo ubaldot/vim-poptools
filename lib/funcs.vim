@@ -15,7 +15,9 @@ def PopupCallbackGrep(id: number, preview_id: number, idx: number)
     # You must extract the filename and the line number
     var file = selection->matchstr('^\S\{-}\ze:')
     var line = selection->matchstr(':\zs\d*\ze:')
-    exe $'edit {file}'
+    # TODO: if I remove silent, then I get e363. Try to run e.g.
+    # :edit /home/yt75534/dymoval/src/dymoval_tutorial/dymoval_tutorial.ipynb
+    silent! exe 'edit ' .. file
     cursor(str2nr(line), 1)
   endif
 enddef
@@ -82,24 +84,11 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
   var file_content = []
   if bufexists(filename)
     file_content = getbufline(filename, 1, '$')
-  elseif filereadable(expand(filename))
+  # Extra check if the file is readable or not
+  elseif filereadable($'{expand(filename)}')
     file_content = readfile($'{expand(filename)}')
   else
-    echo $'File {filename} not readable!'
-    file_content = [$'File {filename} not readable!']
-  endif
-
-  var firstline = max([1, line_nr - popup_height / 2])
-  var file_length = len(file_content)
-  var lastline = min([file_length, line_nr + popup_height / 2])
-  var buf_lines = file_content[firstline - 1 : lastline]
-
-  # Add line numbers only to 'grep' because it messes up with the syntax, see
-  # e.g. what happens with .md files
-  if !empty(search_pattern)
-    for ii in range(0, len(buf_lines) - 1)
-      buf_lines[ii] = $'{firstline + ii}   {buf_lines[ii]}'
-    endfor
+    file_content = ["Can't preview the file!"]
   endif
 
   # Set filetype. No bulletproof, but is seems to work reasonably well
@@ -109,28 +98,31 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
      ? '&filetype = ""'
      : found_filetypedetect_cmd[0].cmd
 
-  # Clean the preview popup
+  # Set options
+  win_execute(preview_id, $'setlocal number')
+  # win_execute(preview_id, '&wrap = false')
+
+  # clean the preview
   popup_settext(preview_id, repeat([""], popup_height))
   # populate the preview
-  popup_settext(preview_id, buf_lines)
-  #
-  # TODO: Open all folds, it works only if you reselect the item in the popup
-  # from below.
-  win_execute(preview_id, $'norm! zR')
+  setwinvar(preview_id, 'buf_lines', file_content)
+  win_execute(preview_id, 'append(0, w:buf_lines)')
+
+  # Highlight grep matches
+  if !empty(search_pattern)
+    win_execute(preview_id, $'normal! {line_nr}gg')
+    win_execute(preview_id, $'setlocal cursorline')
+    win_execute(preview_id, $'match Search /{search_pattern}/')
+  endif
   #
   # Syntax highlight
   win_execute(preview_id, set_filetype_cmd)
-  win_execute(preview_id, '&wrap = false')
 
   # Set preview ID title
   var preview_id_opts = popup_getoptions(preview_id)
   preview_id_opts.title = $' {fnamemodify(filename, ':t')} '
   popup_setoptions(preview_id, preview_id_opts)
 
-  # Highlight search pattern
-  if !empty(search_pattern)
-    win_execute(preview_id, $'exe "match Search \"{search_pattern}\""')
-  endif
 enddef
 
 def ShowColorscheme(main_id: number)
@@ -298,7 +290,7 @@ export def FindFileOrDir(search_type: string)
 
     if search_type == 'file' || search_type == 'file_in_path'
       results ->filter('v:val !~ "\/$"')
-              # ->filter((_, val) => filereadable(expand(val)))
+              ->filter((_, val) => filereadable(expand(val)))
               ->map((_, val) => fnamemodify(val, ':.'))
     endif
     ShowPopup(title, results, search_type)
@@ -383,7 +375,13 @@ export def Grep()
 
   var title = $" {search_dir} - Grep results for '{what}': "
   if !empty(results)
-    results = map(results, (_, val) => substitute(val, '^\S\{-}\ze:', (m) => fnamemodify(m[0], ':.'), 'g'))
+    results ->matchstr('^\S\{-}\ze:')
+            ->filter((_, val) => filereadable(expand(val)))
+            ->map((_, val) => substitute(val, '^\S\{-}\ze:', (m) => fnamemodify(m[0], ':.'), 'g'))
+            # ->map((_, val) => substitute(val, '\(.\{100\}\).*', '\1', 'g'))
+    # results = results->map((_, val) => val[0 : popup_width])
+
+    # exe "Redir echom " .. string(results)
     ShowPopup(title, results, 'grep', what)
   else
     echoerr $"pattern '{what}' not found!"
@@ -405,7 +403,7 @@ enddef
 
 export def RecentFiles()
   var results =  copy(v:oldfiles)
-    # ->filter((_, val) => filereadable(expand(val)))
+    ->filter((_, val) => filereadable(expand(val)))
     ->map((_, val) => fnamemodify(val, ':.'))
   var title = $" Recently opened files: "
   ShowPopup(title, results, 'recent_files')
