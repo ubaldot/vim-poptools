@@ -367,7 +367,8 @@ export def Grep()
 
   var cmd = ''
 
-  var cmd_win_default = $'findstr /C:{shellescape(what)} /N /S {files}"'
+  # var cmd_win_default = $'powershell -command "findstr /C:{shellescape(what)} /N /S {files}"'
+  var cmd_win_default = $'findstr /C:{shellescape(what)} /N /S {files}'
   # var tmp = $"Set-Location -Path {search_dir};gci -Recurse -Filter {files} | Select-String -Pattern {what} -CaseSensitive"
   # tmp = $"Set-Location -Path {search_dir};gci -Recurse -Filter {files} | Where-Object \{ -not (\$_.FullName -match '\\\\\\.[^\\\\]*') \} |  Select-String -Pattern {what} -CaseSensitive"
   # var cmd_win_default = $'powershell -command "{tmp}"'
@@ -383,12 +384,13 @@ export def Grep()
     # In windows we get rid of the ^M and we filter eventual blank lines
     # results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '', 'g'))->filter('v:val != ""')
     # TODO Hidden files are shown and there is no filter for filereadable()
+    echom cmd_win
     results = systemlist(cmd_win)
   else
     # get rid of eventual blank lines
     # results = systemlist(cmd_nix)->filter((_, val) => filereadable(expand(val)))
-    results = systemlist(cmd_nix)
     echom cmd_nix
+    results = systemlist(cmd_nix)
   endif
 
   var title = $" {fnamemodify(search_dir, ':~')} - Grep results for '{what}' in '{files}': "
