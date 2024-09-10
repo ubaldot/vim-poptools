@@ -1,5 +1,6 @@
 vim9script
 
+# TODO Study how can you make them parametric
 var popup_width = &columns / 2
 var popup_height = &lines / 2
 
@@ -13,11 +14,11 @@ def PopupCallbackGrep(id: number, preview_id: number, idx: number)
     var selection = getbufline(winbufnr(id), idx)[0]
     # grep return format is '/path/to/file.xyz:76: ...'
     # You must extract the filename and the line number
+    # OBS! You could use split(selection, ':') to separate filename from line
+    # number, but what if a filename is 'foo:bar'?
     var file = selection->matchstr('^\S\{-}\ze:')
     var line = selection->matchstr(':\zs\d*\ze:')
-    # TODO: if I remove silent, then I get e363. Try to run e.g.
-    # :edit /home/yt75534/dymoval/src/dymoval_tutorial/dymoval_tutorial.ipynb
-    exe 'edit ' .. file
+    exe $'edit {file}'
     cursor(str2nr(line), 1)
   endif
 enddef
@@ -109,12 +110,15 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
     win_execute(preview_id, $'match Search /{search_pattern}/')
   endif
 
-  # TODO: Syntax highlight if it creates problems, disable it. It is not
+  # Syntax highlight if it creates problems, disable it. It is not
   # bulletproof
   if get(g:poptools_config, 'preview_syntax', true)
     # set 'synmaxcol' for avoiding crashing if some readable file has embedded
-    # figures. If you want to preview you have to read the file anyways, so
-    # better off be nice with the syntax parsing putting a cap on it
+    # figures. Figure generate lines with >80000 columns and the internal
+    # engine to figure out the syntax will fail.
+    # If you want to preview you have to read the file anyways, so
+    # better off be nice with the syntax parsing putting a cap on the max
+    # columns.
     var old_synmaxcol = &synmaxcol
     &synmaxcol = 300
     var buf_extension = $'{fnamemodify(filename, ":e")}'
@@ -238,10 +242,12 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
 
     # Opts for preview_id
     opts.col = popup_width + popup_width / 2 + 2
-    preview_id = popup_create("I AM THE PREVIEW! MWAHAHAHA!", opts)
+    preview_id = popup_create("Something went wrong. Run :call popup_clear() to close.", opts)
 
     # Options for main_id, will be set later on
     opts.filter = (id, key) => PopupFilter(id, preview_id, key, search_pattern)
+
+    # TODO Study how popus are sized and positioned on screen
     # If too many results, the scrollbar overlap the preview popup
     var scrollbar_contrib = len(results) > opts.minheight ? 1 : 0
     opts.col = popup_width - popup_width / 2 - 2 - scrollbar_contrib
@@ -274,7 +280,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   popup_setoptions(main_id, opts)
 enddef
 
-# API. The following functions are associated to commands in the plugin file.
+# ---- API. The following functions are associated to commands in the plugin file.
 export def FindFileOrDir(search_type: string)
   # Guard
   if (search_type == 'file' || search_type == 'file_in_path') && getcwd() == expand('~')
@@ -295,7 +301,7 @@ export def FindFileOrDir(search_type: string)
   else
     var title = $" {fnamemodify(getcwd(), ':~')}, {search_type}s '{substring}': "
     if empty(substring)
-      title = $" Search results for {search_type}s in {fnamemodify(getcwd(), ':.')}: "
+      title = $" Search results for {search_type}s in {fnamemodify(getcwd(), ':~')}: "
     endif
 
     if search_type == 'file' || search_type == 'file_in_path'
@@ -345,7 +351,7 @@ export def Grep()
   endif
 
   # Main
-  # TODO fnamemodify(getcwd(), ':.') does not work
+  # TODO fnamemodify(getcwd(), ':.') does not work. Obviously.
   var what = input($"{fnamemodify(getcwd(), ':~')} - What to find: ")
   if empty(what)
     return
@@ -382,7 +388,7 @@ export def Grep()
     echom cmd_nix
   endif
 
-  var title = $" {fnamemodify(search_dir, ':.')} - Grep results for '{what}' in '{files}': "
+  var title = $" {fnamemodify(search_dir, ':~')} - Grep results for '{what}' in '{files}': "
   if !empty(results)
     results->matchstr('^\S\{-}\ze:')
             ->filter((_, val) => filereadable(expand(val)))
