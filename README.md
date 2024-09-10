@@ -114,7 +114,7 @@ list. Here is an example of configuration:
 The default "grep" commands are the following:
 
 ```
-  cmd_win_default = $'findstr /C:{shellescape(what)} /N /S {files} {shellescape(search_dir)}'
+  cmd_win_default = $'findstr /C:{shellescape(what)} /N /S {files}'
   cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {cwd}'
 ```
 

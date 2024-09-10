@@ -354,7 +354,7 @@ export def Grep()
   #   search_dir->substitute('\\', '/', 'g')
   # endif
 
-  var cmd_win_default = $'findstr /C:{shellescape(what)} /N /S {files} {shellescape(search_dir)}'
+  var cmd_win_default = $'findstr /C:{shellescape(what)} /N /S {files}'
   var cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {search_dir}'
 
   var cmd_win = get(g:poptools_config, 'grep_cmd_win', cmd_win_default)
@@ -366,7 +366,8 @@ export def Grep()
   if has('win32')
     # In windows we get rid of the ^M and we filter eventual blank lines
     # results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '', 'g'))->filter('v:val != ""')
-    results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '', 'g'))->filter((_, val) => filereadable(expand(val)))
+    # TODO Hidden files are shown and there is no filter for filereadable()
+    results = systemlist(cmd_win)
     echom cmd_win
   else
     # get rid of eventual blank lines
@@ -383,6 +384,8 @@ export def Grep()
     results = results->map((_, val) => substitute(val, '^\S\{-}\ze:', (m) => fnamemodify(m[0], ':.'), 'g'))
 
     ShowPopup(title, results, 'grep', what)
+  elseif !has('win32')
+    echoerr $"pattern '{what}' not found! Are you in the correct directory?"
   else
     echoerr $"pattern '{what}' not found!"
   endif
