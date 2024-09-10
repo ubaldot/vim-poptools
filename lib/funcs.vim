@@ -99,6 +99,7 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
   # populate the preview
   setwinvar(preview_id, 'buf_lines', file_content)
   win_execute(preview_id, 'append(0, w:buf_lines)')
+  # Unfold stuff
   win_execute(preview_id, 'norm! zR')
 
   # Highlight grep matches
@@ -112,7 +113,8 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
   # bulletproof
   if get(g:poptools_config, 'preview_syntax', true)
     # set 'synmaxcol' for avoiding crashing if some readable file has embedded
-    # figures.
+    # figures. If you want to preview you have to read the file anyways, so
+    # better off be nice with the syntax parsing putting a cap on it
     var old_synmaxcol = &synmaxcol
     &synmaxcol = 300
     var buf_extension = $'{fnamemodify(filename, ":e")}'
@@ -135,6 +137,7 @@ def ShowColorscheme(main_id: number)
     var idx = line('.', main_id)
     var scheme = getbufline(winbufnr(main_id), idx)[0]
     exe $'colorscheme {scheme}'
+    hi link PopupSelected PmenuSel
 enddef
 
 def ClosePopups(main_id: number, preview_id: number)
@@ -178,8 +181,8 @@ def PopupFilterColor(main_id: number, key: string, current_colorscheme: string):
     return true
   elseif key == "\<esc>"
     ClosePopups(main_id, -1)
-    # TODO: Colorscheme BUG
     exe $'colorscheme {current_colorscheme}'
+    hi link PopupSelected PmenuSel
     return true
   else
     return popup_filter_menu(main_id, key)
@@ -249,7 +252,8 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   if search_type == 'color'
     opts.filter = (id, key) => PopupFilterColor(id, key, current_colorscheme)
     var init_highlight_location = index(results, current_colorscheme)
-    win_execute(main_id, $'norm {init_highlight_location + 1}j')
+    win_execute(main_id, $'norm {init_highlight_location }j')
+    hi link PopupSelected PmenuSel
   endif
 
   # Callback switch for main popup
@@ -291,7 +295,7 @@ export def FindFileOrDir(search_type: string)
   else
     var title = $" {fnamemodify(getcwd(), ':~')}, {search_type}s '{substring}': "
     if empty(substring)
-      title = $" Search results for {search_type}s in {fnamemodify(getcwd(), ':~')}: "
+      title = $" Search results for {search_type}s in {fnamemodify(getcwd(), ':.')}: "
     endif
 
     if search_type == 'file' || search_type == 'file_in_path'
@@ -355,10 +359,6 @@ export def Grep()
   endif
 
   var cmd = ''
-  # if has('win32') && exists('+shellslash') && !&shellslash
-  #   # on windows, need to handle backslash
-  #   search_dir->substitute('\\', '/', 'g')
-  # endif
 
   var cmd_win_default = $'findstr /C:{shellescape(what)} /N /S {files}'
   var cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {search_dir}'
@@ -382,7 +382,7 @@ export def Grep()
     echom cmd_nix
   endif
 
-  var title = $" {search_dir} - Grep results for '{what}' in '{files}': "
+  var title = $" {fnamemodify(search_dir, ':.')} - Grep results for '{what}' in '{files}': "
   if !empty(results)
     results->matchstr('^\S\{-}\ze:')
             ->filter((_, val) => filereadable(expand(val)))
