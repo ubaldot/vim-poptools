@@ -29,12 +29,12 @@ the commands are self-explanatory:
 
 ```
 :PoptoolsFindFile
-:PoptoolsFindFileInPath # Takes into account the setting of `:h 'path'`.
+:PoptoolsFindFileInPath # Takes into account the setting of :h 'path'.
 :PoptoolsFindDir
 :PoptoolsBuffers
 :PoptoolsRecentFiles
 :PoptoolsCmdHistory
-:PoptoolsColorscheme # The displayed colors depends on the value of 'background'
+:PoptoolsColorscheme # The displayed colors depends on the value of :h 'background'
 :PoptoolsGrep # External grep, show results in a popup. Grep command is displayed.
 :PoptoolsVimgrep # Vimgrep, show results in the quickfix-list.
 ```
