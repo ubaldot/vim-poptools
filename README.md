@@ -41,7 +41,7 @@ the commands are self-explanatory:
 :PoptoolsColorscheme # The displayed colors depends on the value of :h 'background'
 :PoptoolsGrep # External grep, show results in a popup. Grep command is displayed.
 :PoptoolsVimgrep # Vimgrep, show results in the quickfix-list.
-:PoptoolsLastSearch
+:PoptoolsLastSearch # Show the last search results
 ```
 
 ... and if you are curious, the following is how I mapped them in my `.vimrc`:
@@ -66,12 +66,13 @@ These commands take into account the setting of `:h 'wildignore'`,
 `:h 'wildoptions'` and `:h 'path'` options, so if you want to include/exclude
 some search path, you must adjust such options.
 
-By default, hidden files are excluded. If you want to find a hidden file, then
-you must add `.` at the beginning of the search pattern of `PopupFindFile`,
-e.g. `.git*` or just `.`. Note that hidden files are searched in non-hidden
-folders. To find files in a hidden folder, you must first `cd` into such a
-folder. For example, `cd ~/.vim` followed by `PopupFindFiles` will search
-files inside the `.vim` folder.
+By default, hidden files are excluded. If you want to find them, then you must
+add `.` at the beginning of the search pattern, e.g. use `.git*` to get e.g.
+`.gitignore`.
+
+Hidden files are searched in non-hidden folders. To find files in a hidden
+folder, you must first `cd` into such a folder. For example, `cd ~/.vim`
+followed by `PopupFindFiles` will search files inside the `.vim` folder.
 
 `PoptoolsGrep`
 
