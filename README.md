@@ -79,7 +79,7 @@ by the Vim options settings. The default "grep" commands are the following:
   cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {getcwd()}'
 ```
 
-where the values of `what` `files` are replaced by user input.
+where the values of `{what}` and `{files}` are replaced by user input.
 
 <!-- You can override them by setting `g:poptools_config['cmd_win']` and -->
 <!-- `g:poptools_config['cmd_nix']`, respectively. -->
