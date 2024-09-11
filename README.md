@@ -73,18 +73,20 @@ This command uses an external "grep" program and therefore it is not affected
 by the Vim options settings. The default "grep" commands are the following:
 
 ```
-  cmd_win_default = $'findstr /C:{shellescape(what)} /N /S {files}'
-  cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {cwd}'
+  cmd_win_default = $'powershell -command "cd {getcwd()};findstr /C:{shellescape(what)} /N /S {files}"'
+  cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {getcwd()}'
 ```
 
-You can override them by setting `g:poptools_config['cmd_win']` and
-`g:poptools_config['cmd_nix']`, respectively.
+where the values of `what` `files` are replaced by user input.
 
-In such an overriding, you can use the `{what}`, `{files}`, and `{search_dir}`
-placeholders to specify the string to search (e.g. `foo`), the files pattern
-(e.g. `*.vim`) and the search folder (e.g. `~/myproject`), respectively. The
-values that you will be prompted to insert will be placed into those
-placeholders.
+<!-- You can override them by setting `g:poptools_config['cmd_win']` and -->
+<!-- `g:poptools_config['cmd_nix']`, respectively. -->
+
+<!-- In such an overriding, you can use the `{what}`, `{files}`, and `{search_dir}` -->
+<!-- placeholders to specify the string to search (e.g. `foo`), the files pattern -->
+<!-- (e.g. `*.vim`) and the search folder (e.g. `~/myproject`), respectively. The -->
+<!-- values that you will be prompted to insert will be placed into those -->
+<!-- placeholders. -->
 
 ### Folder search
 
@@ -134,7 +136,7 @@ It follows an example of configuration:
 
 ```
 g:poptools_config = {}`
-g:poptools_config['cmd_win'] = $'powershell -command "gci -Recurse -Filter {files} | Select-String -Pattern {what}"'
+g:poptools_config['cmd_win'] = $'powershell -command "cd {getcwd()};findstr /C:{shellescape(what)} /N /S {files}"'
 g:poptools_config['preview_syntax'] = false
 g:poptools_config['preview_recent_files'] = false
 ```

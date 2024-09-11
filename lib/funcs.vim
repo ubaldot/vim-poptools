@@ -290,7 +290,7 @@ export def FindFileOrDir(search_type: string)
   endif
 
   # Main
-  var substring = input($"'{fnamemodify(getcwd(), ':~')}'\n{search_type} to search ('enter' for all): ")
+  var substring = input($"'{fnamemodify(getcwd(), ':~')}'\n {search_type} to search ('enter' for all): ")
   redraw
   echo "If the search takes too long hit CTRL-C few times and try to
         \ narrow down your search."
@@ -322,12 +322,12 @@ export def Vimgrep()
   endif
 
   # Main
-  var what = input($"'{fnamemodify(getcwd(), ':~')}'\nWhat to find: ")
+  var what = input($"'{fnamemodify(getcwd(), ':~')}'\n What to find: ")
   if empty(what)
     return
   endif
 
-  var where = input($"\nin which files: ")
+  var where = input($"\n in which files: ")
   if empty(where)
     where = '*'
   endif
@@ -353,26 +353,21 @@ export def Grep()
 
   # Main
   # TODO fnamemodify(getcwd(), ':.') does not work. Obviously.
-  var what = input($"'{fnamemodify(getcwd(), ':~')}'\nWhat to find: ")
+  var what = input($"'{fnamemodify(getcwd(), ':~')}'\n What to find: ")
   if empty(what)
     return
   endif
-  var search_dir = get(g:poptools_config, 'search_dir', $'{getcwd()}')
 
-  var files = input($"\nin which files ('empty' for current file, '*' for all files): ")
+  var files = input($"\n in which files ('empty' for current file, '*' for all files): ")
   if empty(files)
-    search_dir = expand('%:h:.')
     files = expand("%:t")
   endif
 
-  var cmd = ''
-
-  # var cmd_win_default = $'powershell -command "findstr /C:{shellescape(what)} /N /S {files}"'
-  var cmd_win_default = $'findstr /C:{shellescape(what)} /N /S {files}'
-  # var tmp = $"Set-Location -Path {search_dir};gci -Recurse -Filter {files} | Select-String -Pattern {what} -CaseSensitive"
-  # tmp = $"Set-Location -Path {search_dir};gci -Recurse -Filter {files} | Where-Object \{ -not (\$_.FullName -match '\\\\\\.[^\\\\]*') \} |  Select-String -Pattern {what} -CaseSensitive"
-  # var cmd_win_default = $'powershell -command "{tmp}"'
-  var cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {search_dir}'
+  var cmd_win_default = $'powershell -command "cd {getcwd()};findstr /C:{shellescape(what)} /N /S {files}"'
+  # var cmd_win_default = $'powershell -command "cd {getcwd()};findstr /C:{shellescape(what)} /N /S {files}|findstr /V /R \"^\\..*\\\\\""'
+  #  For cmd.exe it also exclude hidden files (staring with '.')
+  # var cmd_win_default = $'cd {shellescape(getcwd())} && findstr /C:{shellescape(what)} /N /S {files} | findstr /V /R "^\..*\\\\"'
+  var cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {getcwd()}'
 
   var cmd_win = get(g:poptools_config, 'grep_cmd_win', cmd_win_default)
   var cmd_nix = get(g:poptools_config, 'grep_cmd_nix', cmd_nix_default)
@@ -393,7 +388,7 @@ export def Grep()
     results = systemlist(cmd_nix)
   endif
 
-  var title = $" {fnamemodify(search_dir, ':~')} - Grep results for '{what}' in '{files}': "
+  var title = $" {fnamemodify(getcwd(), ':~')} - Grep results for '{what}' in '{files}': "
   if !empty(results)
     # Results from grep are given in the form path/to/file.ext:num: and we
     # have to extract only the filename from there
@@ -404,9 +399,9 @@ export def Grep()
 
     ShowPopup(title, results, 'grep', what)
   elseif has('win32')
-    Echoerr($"\npattern '{what}' not found! Are you in the correct directory?")
+    Echoerr($"\n pattern '{what}' not found! Are you in the correct directory?")
   else
-    Echoerr($"pattern '{what}' not found!")
+    Echoerr($"\n pattern '{what}' not found!")
   endif
 enddef
 
