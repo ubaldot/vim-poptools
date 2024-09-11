@@ -5,9 +5,13 @@ vim9script
 var popup_width = &columns / 2
 var popup_height = &lines / 2
 
+def Echoerr(msg: string)
+  echohl ErrorMsg | echom $"{msg}" | echohl None
+enddef
+
 # ----- Callback functions
 def PopupCallbackGrep(id: number, preview_id: number, idx: number)
-  if idx != -1
+  if idx > 0
     if preview_id != -1
       popup_close(preview_id)
     endif
@@ -25,7 +29,7 @@ def PopupCallbackGrep(id: number, preview_id: number, idx: number)
 enddef
 
 def PopupCallbackFileBuffer(id: number, preview_id: number, idx: number)
-  if idx != -1
+  if idx > 0
     if preview_id != -1
       popup_close(preview_id)
     endif
@@ -36,7 +40,7 @@ def PopupCallbackFileBuffer(id: number, preview_id: number, idx: number)
 enddef
 
 def PopupCallbackHistory(id: number, preview_id: number, idx: number)
-  if idx != -1
+  if idx > 0
     if preview_id != -1
       popup_close(preview_id)
     endif
@@ -46,7 +50,7 @@ def PopupCallbackHistory(id: number, preview_id: number, idx: number)
 enddef
 
 def PopupCallbackDir(id: number, idx: number)
-  if idx != -1
+  if idx > 0
     var dir = getbufline(winbufnr(id), idx)[0]
     exe $'cd {dir}'
     pwd
@@ -54,7 +58,7 @@ def PopupCallbackDir(id: number, idx: number)
 enddef
 
 def PopupCallbackColorscheme(id: number, idx: number)
-  if idx != -1
+  if idx > 0
     var scheme = getbufline(winbufnr(id), idx)[0]
     noa exe $'colorscheme {scheme}'
   endif
@@ -74,67 +78,69 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
   # Parse the highlighted line on the main popup
   var idx = line('.', main_id)
 
-  var filename = empty(search_pattern)
-    ? getbufline(winbufnr(main_id), idx)[0]
-    : getbufline(winbufnr(main_id), idx)[0]->matchstr('^\S\{-}\ze:')
+  if idx > 0
+    var filename = empty(search_pattern)
+      ? getbufline(winbufnr(main_id), idx)[0]
+      : getbufline(winbufnr(main_id), idx)[0]->matchstr('^\S\{-}\ze:')
 
-  var line_nr = empty(search_pattern)
-    ? popup_height / 2
-    : str2nr(getbufline(winbufnr(main_id), idx)[0]->matchstr(':\zs\d*\ze:'))
+    var line_nr = empty(search_pattern)
+      ? popup_height / 2
+      : str2nr(getbufline(winbufnr(main_id), idx)[0]->matchstr(':\zs\d*\ze:'))
 
-  var file_content = []
-  if bufexists(filename)
-    file_content = getbufline(filename, 1, '$')
-  # TODO: Extra check if the file is readable or not
-  elseif filereadable($'{expand(filename)}')
-    file_content = readfile($'{expand(filename)}')
-  else
-    file_content = ["Can't preview the file!"]
+    var file_content = []
+    if bufexists(filename)
+      file_content = getbufline(filename, 1, '$')
+    # TODO: Extra check if the file is readable or not
+    elseif filereadable($'{expand(filename)}')
+      file_content = readfile($'{expand(filename)}')
+    else
+      file_content = ["Can't preview the file!"]
+    endif
+
+    # Set options
+    win_execute(preview_id, $'setlocal number')
+    # win_execute(preview_id, '&wrap = false')
+
+    # clean the preview
+    popup_settext(preview_id, repeat([""], popup_height))
+    # populate the preview
+    setwinvar(preview_id, 'buf_lines', file_content)
+    win_execute(preview_id, 'append(0, w:buf_lines)')
+    # Unfold stuff
+    win_execute(preview_id, 'norm! zR')
+
+    # Highlight grep matches
+    if !empty(search_pattern)
+      win_execute(preview_id, $'normal! {line_nr}gg')
+      win_execute(preview_id, $'setlocal cursorline')
+      win_execute(preview_id, $'match Search /{search_pattern}/')
+    endif
+
+    # Syntax highlight if it creates problems, disable it. It is not
+    # bulletproof
+    if get(g:poptools_config, 'preview_syntax', true)
+      # set 'synmaxcol' for avoiding crashing if some readable file has embedded
+      # figures. Figure generate lines with >80000 columns and the internal
+      # engine to figure out the syntax will fail.
+      # If you want to preview you have to read the file anyways, so
+      # better off be nice with the syntax parsing putting a cap on the max
+      # columns.
+      var old_synmaxcol = &synmaxcol
+      &synmaxcol = 300
+      var buf_extension = $'{fnamemodify(filename, ":e")}'
+      var found_filetypedetect_cmd = autocmd_get({group: 'filetypedetect'})->filter($'v:val.pattern =~ "*\\.{buf_extension}$"')
+      var set_filetype_cmd = empty(found_filetypedetect_cmd)
+         ? '&filetype = ""'
+         : found_filetypedetect_cmd[0].cmd
+      win_execute(preview_id, set_filetype_cmd)
+      &synmaxcol = old_synmaxcol
+    endif
+
+    # Set preview ID title
+    var preview_id_opts = popup_getoptions(preview_id)
+    preview_id_opts.title = $' {fnamemodify(filename, ':t')} '
+    popup_setoptions(preview_id, preview_id_opts)
   endif
-
-  # Set options
-  win_execute(preview_id, $'setlocal number')
-  # win_execute(preview_id, '&wrap = false')
-
-  # clean the preview
-  popup_settext(preview_id, repeat([""], popup_height))
-  # populate the preview
-  setwinvar(preview_id, 'buf_lines', file_content)
-  win_execute(preview_id, 'append(0, w:buf_lines)')
-  # Unfold stuff
-  win_execute(preview_id, 'norm! zR')
-
-  # Highlight grep matches
-  if !empty(search_pattern)
-    win_execute(preview_id, $'normal! {line_nr}gg')
-    win_execute(preview_id, $'setlocal cursorline')
-    win_execute(preview_id, $'match Search /{search_pattern}/')
-  endif
-
-  # Syntax highlight if it creates problems, disable it. It is not
-  # bulletproof
-  if get(g:poptools_config, 'preview_syntax', true)
-    # set 'synmaxcol' for avoiding crashing if some readable file has embedded
-    # figures. Figure generate lines with >80000 columns and the internal
-    # engine to figure out the syntax will fail.
-    # If you want to preview you have to read the file anyways, so
-    # better off be nice with the syntax parsing putting a cap on the max
-    # columns.
-    var old_synmaxcol = &synmaxcol
-    &synmaxcol = 300
-    var buf_extension = $'{fnamemodify(filename, ":e")}'
-    var found_filetypedetect_cmd = autocmd_get({group: 'filetypedetect'})->filter($'v:val.pattern =~ "*\\.{buf_extension}$"')
-    var set_filetype_cmd = empty(found_filetypedetect_cmd)
-       ? '&filetype = ""'
-       : found_filetypedetect_cmd[0].cmd
-    win_execute(preview_id, set_filetype_cmd)
-    &synmaxcol = old_synmaxcol
-  endif
-
-  # Set preview ID title
-  var preview_id_opts = popup_getoptions(preview_id)
-  preview_id_opts.title = $' {fnamemodify(filename, ':t')} '
-  popup_setoptions(preview_id, preview_id_opts)
 
 enddef
 
@@ -192,6 +198,8 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   # TODO: why you have the ^@ at the beginning of execute('colorscheme') ???
   var current_colorscheme = execute('colorscheme')->substitute('\n', '', 'g')
   var current_background = &background
+  hi link PopupSelected PmenuSel
+
   # Standard options
   var opts = {
     title: title,
@@ -277,12 +285,12 @@ enddef
 export def FindFileOrDir(search_type: string)
   # Guard
   if (search_type == 'file' || search_type == 'file_in_path') && getcwd() == expand('~')
-    echoe "You are in your home directory. Too many results."
+    Echoerr("You are in your home directory. Too many results.")
     return
   endif
 
   # Main
-  var substring = input($"{fnamemodify(getcwd(), ':~')} - {search_type} to search ('enter' for all): ")
+  var substring = input($"'{fnamemodify(getcwd(), ':~')}'\n{search_type} to search ('enter' for all): ")
   redraw
   echo "If the search takes too long hit CTRL-C few times and try to
         \ narrow down your search."
@@ -309,22 +317,22 @@ enddef
 export def Vimgrep()
   # Guard
   if getcwd() == expand('~')
-    echoe "You are in your home directory. Too many results."
+    Echoerr("You are in your home directory. Too many results.")
     return
   endif
 
   # Main
-  var what = input($"{fnamemodify(getcwd(), ':~')} - What to find: ")
+  var what = input($"'{fnamemodify(getcwd(), ':~')}'\nWhat to find: ")
   if empty(what)
     return
   endif
 
-  var where = input($"{fnamemodify(getcwd(), ':~')} - in which files: ")
+  var where = input($"\nin which files: ")
   if empty(where)
     where = '*'
   endif
 
-  var vimgrep_options = input($"{fnamemodify(getcwd(), ':~')} - vimgrep options (empty = 'gj'): ")
+  var vimgrep_options = input($" Vimgrep options (empty = 'gj'): ")
   if empty(vimgrep_options)
     vimgrep_options = 'gj'
   endif
@@ -339,19 +347,19 @@ enddef
 export def Grep()
   # Guard
   if getcwd() == expand('~')
-    echoe "You are in your home directory. Too many results."
+    Echoerr("You are in your home directory. Too many results.")
     return
   endif
 
   # Main
   # TODO fnamemodify(getcwd(), ':.') does not work. Obviously.
-  var what = input($"{fnamemodify(getcwd(), ':~')} - What to find: ")
+  var what = input($"'{fnamemodify(getcwd(), ':~')}'\nWhat to find: ")
   if empty(what)
     return
   endif
   var search_dir = get(g:poptools_config, 'search_dir', $'{getcwd()}')
 
-  var files = input($"{fnamemodify(getcwd(), ':~')} - in which files ('empty' for current file, '*' for all files): ")
+  var files = input($"\nin which files ('empty' for current file, '*' for all files): ")
   if empty(files)
     search_dir = expand('%:h:.')
     files = expand("%:t")
@@ -396,9 +404,9 @@ export def Grep()
 
     ShowPopup(title, results, 'grep', what)
   elseif has('win32')
-    echoerr $"pattern '{what}' not found! Are you in the correct directory?"
+    Echoerr($"\npattern '{what}' not found! Are you in the correct directory?")
   else
-    echoerr $"pattern '{what}' not found!"
+    Echoerr($"pattern '{what}' not found!")
   endif
 enddef
 
