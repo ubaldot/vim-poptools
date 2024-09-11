@@ -136,7 +136,6 @@ It follows an example of configuration:
 
 ```
 g:poptools_config = {}`
-g:poptools_config['cmd_win'] = $'powershell -command "cd {getcwd()};findstr /C:{shellescape(what)} /N /S {files}"'
 g:poptools_config['preview_syntax'] = false
 g:poptools_config['preview_recent_files'] = false
 ```
