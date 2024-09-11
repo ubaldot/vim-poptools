@@ -17,8 +17,11 @@ def PopupCallbackGrep(id: number, preview_id: number, idx: number)
     endif
 
     var selection = getbufline(winbufnr(id), idx)[0]
-    # grep return format is '/path/to/file.xyz:76: ...'
-    # You must extract the filename and the line number
+    # grep return format is 'file.xyz:76: ...'
+    # You must extract the filename and the line number.
+    # However, the name is not full, and you must reconstruct. The easiest
+    # way is to fetch it from the popup title
+    #
     # OBS! You could use split(selection, ':') to separate filename from line
     # number, but what if a filename is 'foo:bar'?
     var file = selection->matchstr('^\S\{-}\ze:')
@@ -309,6 +312,8 @@ export def FindFileOrDir(search_type: string)
   if empty(results)
     echo $"'{substring}' pattern not found!"
   else
+    # TODO The title MUST contain the path followed by a space, otherwise it
+    # won't be possible to preview and jump to files. This can be improved.
     var title = $" {fnamemodify(getcwd(), ':~')}, {search_type}s '{substring}': "
     if empty(substring)
       title = $" Search results for {search_type}s in {fnamemodify(getcwd(), ':~')}: "
@@ -399,6 +404,8 @@ export def Grep()
     results = systemlist(cmd_nix)
   endif
 
+  # TODO The title MUST contain the path followed by a space, otherwise it
+  # won't be possible to preview and jump to files. This can be improved.
   var title = $" {fnamemodify(search_dir, ':~')} - Grep results for '{what}' in '{files}': "
   if !empty(results)
     # Results from grep are given in the form path/to/file.ext:num: and we
