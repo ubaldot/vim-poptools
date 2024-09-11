@@ -363,10 +363,10 @@ export def Grep()
     files = expand("%:t")
   endif
 
-  var cmd_win_default = $'powershell -command "cd {getcwd()};findstr /C:{shellescape(what)} /N /S {files}"'
+  # var cmd_win_default = $'powershell -command "cd {getcwd()};findstr /C:{shellescape(what)} /N /S {files}"'
   # var cmd_win_default = $'powershell -command "cd {getcwd()};findstr /C:{shellescape(what)} /N /S {files}|findstr /V /R \"^\\..*\\\\\""'
   #  For cmd.exe it also exclude hidden files (staring with '.')
-  # var cmd_win_default = $'cd {shellescape(getcwd())} && findstr /C:{shellescape(what)} /N /S {files} | findstr /V /R "^\..*\\\\"'
+  var cmd_win_default = $'cmd.exe /c cd {shellescape(getcwd())} && findstr /C:{shellescape(what)} /N /S {files} | findstr /V /R "^\..*\\\\"'
   var cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {getcwd()}'
 
   var cmd_win = get(g:poptools_config, 'grep_cmd_win', cmd_win_default)
