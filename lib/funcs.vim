@@ -384,7 +384,7 @@ export def Grep()
   # var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {files}|findstr /V /R \"^\\..*\\\\\""'
   #  The following is faster because it uses cmd.exe
   # var cmd_win_default = $'cmd.exe /c cd {shellescape(search_dir)} && findstr /C:{shellescape(what)} /N /S {files} | findstr /V /R "^\..*\\\\"'
-  var cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {search_dir}'
+  var cmd_nix_default = $'cd {search_dir} && grep -n -r --include="{files}" "{what}" .'
 
   var cmd_win = get(g:poptools_config, 'grep_cmd_win', cmd_win_default)
   var cmd_nix = get(g:poptools_config, 'grep_cmd_nix', cmd_nix_default)
