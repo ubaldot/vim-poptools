@@ -14,13 +14,10 @@ This plugin aims to scale your productivity by conveniently using popups for a
 multitude of tasks, from finding files and directories, to setting your
 favorite colorscheme.
 
-It is more essential compared to similar plugins such as
-[fzf](https://github.com/junegunn/fzf.vim),
-[fuzzyy](https://github.com/Donaldttt/fuzzyy) or
-[scope](https://github.com/girishji/scope.vim). Under some circumstances it
-may be slower, but I don't mind waiting a bit when the search process takes a
-while; it helps me pause and reflect on what I am doing, giving my brain some
-breathing room.
+It is more essential compared to similar plugins such as [fzf][0], [fuzzyy][1]
+or [scope][2]. Under some circumstances it may be slower, but I don't mind
+waiting a bit when the search process takes a while; it helps me pause and
+reflect on what I am doing, giving my brain some breathing room.
 
 Nevertheless, I personally like the interface and how it displays all the
 results at once. Additionally, I find the opportunity of saving the last
@@ -148,3 +145,9 @@ g:poptools_config = {}`
 g:poptools_config['preview_syntax'] = false
 g:poptools_config['preview_recent_files'] = false
 ```
+
+## Links
+
+[0]: https://github.com/junegunn/fzf.vim
+[1]: https://github.com/Donaldttt/fuzzyy
+[2]: https://github.com/girishji/scope.vim
