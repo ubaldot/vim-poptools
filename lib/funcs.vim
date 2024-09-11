@@ -226,6 +226,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   }
 
   var main_id = popup_menu(results, opts)
+  # var main_id = popup_create(results, opts)
 
   # Preview handling
   var preview_id = -1
@@ -290,6 +291,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
 
   opts.callback = PopupCallback
   popup_setoptions(main_id, opts)
+
 enddef
 
 # ---- API. The following functions are associated to commands in the plugin file.
