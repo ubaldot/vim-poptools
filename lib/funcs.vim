@@ -175,11 +175,14 @@ def ClosePopups(main_id: number, preview_id: number)
 enddef
 
 def PopupFilter(main_id: number, preview_id: number, key: string, search_type: string, search_pattern: string): bool
-  # Save for last search
-  last_results = getbufline(winbufnr(main_id), 1, '$')
-  last_title = popup_getoptions(main_id).title
-  last_search_type = search_type
-  last_search_pattern = search_pattern
+
+  if index(['file', 'file_in_path', 'grep'], search_type) != -1
+    # Save for last search
+    last_results = getbufline(winbufnr(main_id), 1, '$')
+    last_title = popup_getoptions(main_id).title
+    last_search_type = search_type
+    last_search_pattern = search_pattern
+  endif
 
   # Handle shortcuts
   if key == "\<esc>"
