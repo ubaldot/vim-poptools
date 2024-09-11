@@ -26,12 +26,8 @@ def PopupCallbackGrep(id: number, preview_id: number, idx: number)
 
     # TODO The first part of the title is always the path. Make it more
     # robust!
-    if has('win32')
-      var path = split(popup_getoptions(id).title)[0]
-      exe $'edit {path}/{file}'
-    else
-      exe $'edit {file}'
-    endif
+    var path = split(popup_getoptions(id).title)[0]
+    exe $'edit {path}/{file}'
     cursor(str2nr(line), 1)
   endif
 enddef
@@ -97,10 +93,8 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
 
     # TODO The first part of the title is always the path. Make it more
     # robust!
-    if has('win32')
-      var path = split(popup_getoptions(main_id).title)[0]
-      filename = $'{path}/{filename}'
-    endif
+    var path = split(popup_getoptions(main_id).title)[0]
+    filename = $'{path}/{filename}'
 
     var file_content = []
     if bufexists(filename)
