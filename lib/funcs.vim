@@ -92,11 +92,11 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_type: string, 
 
   # This "if" is needed because the filter is called on <cr> anyways
   if idx > 0
-    var filename = empty(search_pattern)
+    var filename = search_type !=# 'grep'
       ? getbufline(winbufnr(main_id), idx)[0]
       : getbufline(winbufnr(main_id), idx)[0]->matchstr('^\S\{-}\ze:')
 
-    var line_nr = empty(search_pattern)
+    var line_nr = search_type !=# 'grep'
       ? popup_height / 2
       : str2nr(getbufline(winbufnr(main_id), idx)[0]->matchstr(':\zs\d*\ze:'))
 
