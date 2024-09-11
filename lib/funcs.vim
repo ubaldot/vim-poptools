@@ -27,8 +27,6 @@ def PopupCallbackGrep(id: number, preview_id: number, idx: number)
     var file = selection->matchstr('^\S\{-}\ze:')
     var line = selection->matchstr(':\zs\d*\ze:')
 
-    # TODO The first part of the title is always the path. Make it more
-    # robust!
     var path = split(popup_getoptions(id).title)[0]
     exe $'edit {path}/{file}'
     cursor(str2nr(line), 1)
@@ -417,8 +415,6 @@ export def Grep()
     results->matchstr('^\S\{-}\ze:')
             ->filter((_, val) => filereadable(expand(val)))
             ->map((_, val) => substitute(val, '^\S\{-}\ze:', (m) => fnamemodify(m[0], ':.'), 'g'))
-            # TODO: See if you can do better
-    # results = results->map((_, val) => substitute(val, '^\S\{-}\ze:', (m) => fnamemodify(m[0], ':.'), 'g'))
 
     ShowPopup(title, results, 'grep', what)
   else
