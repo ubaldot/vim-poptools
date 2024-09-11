@@ -138,13 +138,6 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
 
 enddef
 
-def ShowColorscheme(main_id: number)
-    var idx = line('.', main_id)
-    var scheme = getbufline(winbufnr(main_id), idx)[0]
-    exe $'colorscheme {scheme}'
-    hi link PopupSelected PmenuSel
-enddef
-
 def ClosePopups(main_id: number, preview_id: number)
     if preview_id != -1
       popup_close(preview_id)
@@ -158,39 +151,37 @@ enddef
 
 def PopupFilter(main_id: number, preview_id: number, key: string, search_pattern: string): bool
   # Handle shortcuts
-  if index(['j', "\<down>", "\<c-n>"], key) != -1
-    win_execute(main_id, 'norm j')
-    UpdateFilePreview(main_id, preview_id, search_pattern)
-    return true
-  elseif index(['k', "\<Up>", "\<c-p>"], key) != -1
-    win_execute(main_id, 'norm k')
-    UpdateFilePreview(main_id, preview_id, search_pattern)
-    return true
-  elseif key == "\<esc>"
+  if key == "\<esc>"
     ClosePopups(main_id, preview_id)
     return true
   else
+    UpdateFilePreview(main_id, preview_id, search_pattern)
     return popup_filter_menu(main_id, key)
   endif
 enddef
 
-def PopupFilterColor(main_id: number, key: string, current_colorscheme: string): bool
-  # Handle shortcuts
-  if index(['j', "\<down>", "\<c-n>"], key) != -1
-    win_execute(main_id, 'norm j')
-    ShowColorscheme(main_id)
-    return true
-  elseif index(['k', "\<Up>", "\<c-p>"], key) != -1
-    win_execute(main_id, 'norm k')
-    ShowColorscheme(main_id)
-    return true
-  elseif key == "\<esc>"
+def ShowColorscheme(main_id: number, current_background: string)
+    # Circular selection
+    var idx = line('.', main_id) % (line('$', main_id) + 1)
+    # I need this check because when user makes a selection with <cr> this
+    # function is called anyways and idx will be 0
+    if idx > 0
+      var scheme = getbufline(winbufnr(main_id), idx)[0]
+      exe $'colorscheme {scheme}'
+      &background = current_background
+      hi link PopupSelected PmenuSel
+    endif
+enddef
+
+def PopupFilterColor(main_id: number, key: string, current_colorscheme: string, current_background: string): bool
+  if key == "\<esc>"
     ClosePopups(main_id, -1)
     exe $'colorscheme {current_colorscheme}'
-    hi link PopupSelected PmenuSel
     return true
   else
-    return popup_filter_menu(main_id, key)
+    popup_filter_menu(main_id, key)
+    ShowColorscheme(main_id, current_background)
+    return true
   endif
 enddef
 #
@@ -199,6 +190,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
 
   # TODO: why you have the ^@ at the beginning of execute('colorscheme') ???
   var current_colorscheme = execute('colorscheme')->substitute('\n', '', 'g')
+  var current_background = &background
   # Standard options
   var opts = {
     title: title,
@@ -257,10 +249,9 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   endif
 
   if search_type == 'color'
-    opts.filter = (id, key) => PopupFilterColor(id, key, current_colorscheme)
+    opts.filter = (id, key) => PopupFilterColor(id, key, current_colorscheme, current_background)
     var init_highlight_location = index(results, current_colorscheme)
     win_execute(main_id, $'norm {init_highlight_location }j')
-    hi link PopupSelected PmenuSel
   endif
 
   # Callback switch for main popup
@@ -418,6 +409,7 @@ export def Buffers()
 enddef
 
 export def Colorscheme()
+  hi link PopupSelected PmenuSel
   var results = getcompletion('', 'color', true)
   var title = " Colorschemes: "
   ShowPopup(title, results, 'color')
