@@ -23,7 +23,11 @@ def PopupCallbackGrep(id: number, preview_id: number, idx: number)
     # number, but what if a filename is 'foo:bar'?
     var file = selection->matchstr('^\S\{-}\ze:')
     var line = selection->matchstr(':\zs\d*\ze:')
-    exe $'edit {file}'
+
+    # TODO The first part of the title is always the path. Make it more
+    # robust!
+    var path = split(popup_getoptions(id).title)[0]
+    exe $'edit {path}/{file}'
     cursor(str2nr(line), 1)
   endif
 enddef
@@ -86,6 +90,11 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
     var line_nr = empty(search_pattern)
       ? popup_height / 2
       : str2nr(getbufline(winbufnr(main_id), idx)[0]->matchstr(':\zs\d*\ze:'))
+
+    # TODO The first part of the title is always the path. Make it more
+    # robust!
+    var path = split(popup_getoptions(main_id).title)[0]
+    filename = $'{path}/{filename}'
 
     var file_content = []
     if bufexists(filename)
@@ -361,8 +370,8 @@ export def Grep()
 
   var files = input($"\n in which files ('empty' for current file, '*' for all files): ")
   if empty(files)
+    search_dir = expand("%:h")
     files = expand("%:t")
-    search_dir = expand("%:~:h")
   endif
 
   var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {files}"'
