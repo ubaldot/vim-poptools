@@ -363,8 +363,8 @@ export def Grep()
     files = expand("%:t")
   endif
 
-  # var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {getcwd()};findstr /C:{shellescape(what)} /N /S {files}"'
-  var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {getcwd()};findstr /C:{shellescape(what)} /N /S {files}|findstr /V /R \"^\\..*\\\\\""'
+  var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {getcwd()};findstr /C:{shellescape(what)} /N /S {files}"'
+  # var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {getcwd()};findstr /C:{shellescape(what)} /N /S {files}|findstr /V /R \"^\\..*\\\\\""'
   #  The following is faster because it uses cmd.exe
   # var cmd_win_default = $'cmd.exe /c cd {shellescape(getcwd())} && findstr /C:{shellescape(what)} /N /S {files} | findstr /V /R "^\..*\\\\"'
   var cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {getcwd()}'
