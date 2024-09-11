@@ -155,8 +155,9 @@ def PopupFilter(main_id: number, preview_id: number, key: string, search_pattern
     ClosePopups(main_id, preview_id)
     return true
   else
+    popup_filter_menu(main_id, key)
     UpdateFilePreview(main_id, preview_id, search_pattern)
-    return popup_filter_menu(main_id, key)
+    return true
   endif
 enddef
 
