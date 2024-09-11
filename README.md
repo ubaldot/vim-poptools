@@ -10,17 +10,21 @@ Exploit popups as much as you can!
 * Vim-poptools *
 </p>
 
-This plugin aims at scaling your productivity by conveniently using popups for
-a multitude of tasks, from finding files and directories, to set your favorite
-colorscheme.
+This plugin aims to scale your productivity by conveniently using popups for a
+multitude of tasks, from finding files and directories, to setting your
+favorite colorscheme.
 
-It is slower compared to other plugins like
+It is more essential compared to similar plugins such as
 [fzf](https://github.com/junegunn/fzf.vim),
 [fuzzyy](https://github.com/Donaldttt/fuzzyy) or
-[scope](https://github.com/girishji/scope.vim) (this plugin is synchronous
-whereas the others are asynchronous) but I don't mind to wait a bit if the
-search process takes a while: it helps me in pausing and reflecting on what I
-am doing thus giving some breath to my brain.
+[scope](https://github.com/girishji/scope.vim). Under some circumstances it
+may be slower, but I don't mind waiting a bit when the search process takes a
+while; it helps me pause and reflect on what I am doing, giving my brain some
+breathing room.
+
+Nevertheless, I personally like the interface and how it displays all the
+results at once. Additionally, I find the opportunity of saving the last
+search very handy. The configuration is also fairly straightforward.
 
 ### Commands
 
