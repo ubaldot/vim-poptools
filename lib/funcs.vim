@@ -327,9 +327,9 @@ export def Vimgrep()
     return
   endif
 
-  var where = input($"\n in which files: ")
-  if empty(where)
-    where = '*'
+  var files = input($"\n in which files: ")
+  if empty(files)
+    files = '*'
   endif
 
   var vimgrep_options = input($" Vimgrep options (empty = 'gj'): ")
@@ -337,7 +337,7 @@ export def Vimgrep()
     vimgrep_options = 'gj'
   endif
 
-  var cmd = $'vimgrep /{what}/{vimgrep_options} **/{where}'
+  var cmd = $'vimgrep /{what}/{vimgrep_options} **/{files}'
   redraw
   echo cmd
   exe cmd
@@ -351,9 +351,10 @@ export def Grep()
     return
   endif
 
+  var search_dir = getcwd()
   # Main
   # TODO fnamemodify(getcwd(), ':.') does not work. Obviously.
-  var what = input($"'{fnamemodify(getcwd(), ':~')}'\n What to find: ")
+  var what = input($"'{fnamemodify(search_dir, ':~')}'\n What to find: ")
   if empty(what)
     return
   endif
@@ -361,13 +362,14 @@ export def Grep()
   var files = input($"\n in which files ('empty' for current file, '*' for all files): ")
   if empty(files)
     files = expand("%:t")
+    search_dir = expand("%:~:h")
   endif
 
-  var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {getcwd()};findstr /C:{shellescape(what)} /N /S {files}"'
-  # var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {getcwd()};findstr /C:{shellescape(what)} /N /S {files}|findstr /V /R \"^\\..*\\\\\""'
+  var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {files}"'
+  # var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {files}|findstr /V /R \"^\\..*\\\\\""'
   #  The following is faster because it uses cmd.exe
-  # var cmd_win_default = $'cmd.exe /c cd {shellescape(getcwd())} && findstr /C:{shellescape(what)} /N /S {files} | findstr /V /R "^\..*\\\\"'
-  var cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {getcwd()}'
+  # var cmd_win_default = $'cmd.exe /c cd {shellescape(search_dir)} && findstr /C:{shellescape(what)} /N /S {files} | findstr /V /R "^\..*\\\\"'
+  var cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {search_dir}'
 
   var cmd_win = get(g:poptools_config, 'grep_cmd_win', cmd_win_default)
   var cmd_nix = get(g:poptools_config, 'grep_cmd_nix', cmd_nix_default)
@@ -388,7 +390,7 @@ export def Grep()
     results = systemlist(cmd_nix)
   endif
 
-  var title = $" {fnamemodify(getcwd(), ':~')} - Grep results for '{what}' in '{files}': "
+  var title = $" {fnamemodify(search_dir, ':~')} - Grep results for '{what}' in '{files}': "
   if !empty(results)
     # Results from grep are given in the form path/to/file.ext:num: and we
     # have to extract only the filename from there
