@@ -5,6 +5,11 @@ vim9script
 var popup_width = &columns / 2
 var popup_height = &lines / 2
 
+var last_results = []
+var last_title = ''
+var last_search_type = ''
+var last_search_pattern = ''
+
 def Echoerr(msg: string)
   echohl ErrorMsg | echom $"{msg}" | echohl None
 enddef
@@ -30,6 +35,7 @@ def PopupCallbackGrep(id: number, preview_id: number, idx: number)
     var path = split(popup_getoptions(id).title)[0]
     exe $'edit {path}/{file}'
     cursor(str2nr(line), 1)
+
   endif
 enddef
 
@@ -41,6 +47,7 @@ def PopupCallbackFileBuffer(id: number, preview_id: number, idx: number)
     echo ""
     var selection = getbufline(winbufnr(id), idx)[0]
     exe $'edit {selection}'
+
   endif
 enddef
 
@@ -168,6 +175,12 @@ def ClosePopups(main_id: number, preview_id: number)
 enddef
 
 def PopupFilter(main_id: number, preview_id: number, key: string, search_type: string, search_pattern: string): bool
+  # Save for last search
+  last_results = getbufline(winbufnr(main_id), 1, '$')
+  last_title = popup_getoptions(main_id).title
+  last_search_type = search_type
+  last_search_pattern = search_pattern
+
   # Handle shortcuts
   if key == "\<esc>"
     ClosePopups(main_id, preview_id)
@@ -303,7 +316,7 @@ export def FindFileOrDir(search_type: string)
   endif
 
   # Main
-  var what = input($"'{fnamemodify(getcwd(), ':~')}'\n {search_type} to search ('enter' for all): ")
+  var what = input($"'{fnamemodify(getcwd(), ':~')}'\n {search_type} name to search ('enter' for all): ")
   redraw
   echo "If the search takes too long hit CTRL-C few times and try to
         \ narrow down your search."
@@ -337,7 +350,7 @@ export def Vimgrep()
   endif
 
   # Main
-  var what = input($"'{fnamemodify(getcwd(), ':~')}'\n What to find: ")
+  var what = input($"'{fnamemodify(getcwd(), ':~')}'\n String to find: ")
   if empty(what)
     return
   endif
@@ -369,7 +382,7 @@ export def Grep()
   endif
 
   # Main
-  var what = input($"'{fnamemodify(getcwd(), ':~')}'\n What to find: ")
+  var what = input($"'{fnamemodify(getcwd(), ':~')}'\n String to find: ")
   if empty(what)
     return
   endif
@@ -453,4 +466,12 @@ export def CmdHistory()
   endfor
   var title = " Commands history: "
   ShowPopup(title, reverse(results[1 : ]), 'history')
+enddef
+
+export def LastSearch()
+  if empty(last_results)
+    Echoerr('No last search results available!')
+  else
+    ShowPopup(last_title, last_results, last_search_type, last_search_pattern)
+  endif
 enddef

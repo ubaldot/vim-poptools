@@ -37,6 +37,7 @@ the commands are self-explanatory:
 :PoptoolsColorscheme # The displayed colors depends on the value of :h 'background'
 :PoptoolsGrep # External grep, show results in a popup. Grep command is displayed.
 :PoptoolsVimgrep # Vimgrep, show results in the quickfix-list.
+:PoptoolsLastSearch
 ```
 
 ... and if you are curious, the following is how I mapped them in my `.vimrc`:
@@ -44,6 +45,7 @@ the commands are self-explanatory:
 ```
 nnoremap <c-p> <cmd>PoptoolsFindFile<cr><cr>
 nnoremap <c-p>f <cmd>PoptoolsFindFile<cr>
+nnoremap <c-p>l <cmd>PoptoolsLastSearch<cr>
 nnoremap <c-tab> <cmd>PoptoolsBuffers<cr>
 nnoremap <c-p>h <cmd>PoptoolsCmdHistory<cr>
 xnoremap <c-p>h <esc>PoptoolsCmdHistory<cr>
