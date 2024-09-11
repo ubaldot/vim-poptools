@@ -73,7 +73,8 @@ This command uses an external "grep" program and therefore it is not affected
 by the Vim options settings. The default "grep" commands are the following:
 
 ```
-  cmd_win_default = $'cmd.exe /c cd {shellescape(getcwd())} && findstr /C:{shellescape(what)} /N /S {files} | findstr /V /R "^\..*\\\\"'
+  <!-- cmd_win_default = $'cmd.exe /c cd {shellescape(getcwd())} && findstr /C:{shellescape(what)} /N /S {files} | findstr /V /R "^\..*\\\\"' -->
+  cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {getcwd()};findstr /C:{shellescape(what)} /N /S {files}|findstr /V /R \"^\\..*\\\\\""'
   cmd_nix_default = $'grep -n -r --include="{files}" "{what}" {getcwd()}'
 ```
 
