@@ -81,7 +81,7 @@ enddef
 #
 # For the syntax highlight, you may use the 'GetFiletypeByFilename()' function
 #
-def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: string)
+def UpdateFilePreview(main_id: number, preview_id: number, search_type: string, search_pattern: string)
   # Parse the highlighted line on the main popup
   var idx = line('.', main_id)
 
@@ -98,8 +98,11 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
     # We split the fullname so that we can show it nicely in the popup.
     # However, when showing the preview or during the callback, it is safer to
     # have the fullname. The path is in the popup title.
-    var path = split(popup_getoptions(main_id).title)[0]
-    filename = $'{path}/{filename}'
+    # In case of Buffers or Recent files, that is not needed
+    if index(['file', 'file_in_path', 'grep'], search_type) != -1
+      var path = split(popup_getoptions(main_id).title)[0]
+      filename = $'{path}/{filename}'
+    endif
 
     var file_content = []
     if bufexists(filename)
@@ -166,14 +169,14 @@ def ClosePopups(main_id: number, preview_id: number)
     popup_close(main_id)
 enddef
 
-def PopupFilter(main_id: number, preview_id: number, key: string, search_pattern: string): bool
+def PopupFilter(main_id: number, preview_id: number, key: string, search_type: string, search_pattern: string): bool
   # Handle shortcuts
   if key == "\<esc>"
     ClosePopups(main_id, preview_id)
     return true
   else
     popup_filter_menu(main_id, key)
-    UpdateFilePreview(main_id, preview_id, search_pattern)
+    UpdateFilePreview(main_id, preview_id, search_type, search_pattern)
     return true
   endif
 enddef
@@ -257,14 +260,14 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     preview_id = popup_create("Something went wrong. Run :call popup_clear() to close.", opts)
 
     # Options for main_id, will be set later on
-    opts.filter = (id, key) => PopupFilter(id, preview_id, key, search_pattern)
+    opts.filter = (id, key) => PopupFilter(id, preview_id, key, search_type, search_pattern)
 
     # TODO Study how popus are sized and positioned on screen
     # If too many results, the scrollbar overlap the preview popup
     var scrollbar_contrib = len(results) > opts.minheight ? 1 : 0
     opts.col = popup_width - popup_width / 2 - 2 - scrollbar_contrib
 
-    UpdateFilePreview(main_id, preview_id, search_pattern)
+    UpdateFilePreview(main_id, preview_id, search_type, search_pattern)
   endif
 
   if search_type == 'color'
@@ -426,7 +429,7 @@ enddef
 export def Buffers()
   var results = getcompletion('', 'buffer', true)
                 ->map((_, val) => fnamemodify(val, ':.'))
-  var title = $" {fnamemodify(getcwd(), ':~')} - Buffers: "
+  var title = " Buffers: "
   ShowPopup(title, results, 'buffer')
 enddef
 
@@ -441,7 +444,7 @@ export def RecentFiles()
   var results =  copy(v:oldfiles)
     ->filter((_, val) => filereadable(expand(val)))
     ->map((_, val) => fnamemodify(val, ':.'))
-  var title = $" {fnamemodify(getcwd(), ':~')} - Recently opened files: "
+  var title = " Recently opened files: "
   ShowPopup(title, results, 'recent_files')
 enddef
 
