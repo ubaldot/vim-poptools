@@ -146,8 +146,6 @@ g:poptools_config['preview_syntax'] = false
 g:poptools_config['preview_recent_files'] = false
 ```
 
-## Links
-
 [0]: https://github.com/junegunn/fzf.vim
 [1]: https://github.com/Donaldttt/fuzzyy
 [2]: https://github.com/girishji/scope.vim
