@@ -85,6 +85,7 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
   # Parse the highlighted line on the main popup
   var idx = line('.', main_id)
 
+  # This "if" is needed because the filter is called on <cr> anyways
   if idx > 0
     var filename = empty(search_pattern)
       ? getbufline(winbufnr(main_id), idx)[0]
@@ -94,15 +95,16 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
       ? popup_height / 2
       : str2nr(getbufline(winbufnr(main_id), idx)[0]->matchstr(':\zs\d*\ze:'))
 
-    # TODO The first part of the title is always the path. Make it more
-    # robust!
+    # We split the fullname so that we can show it nicely in the popup.
+    # However, when showing the preview or during the callback, it is safer to
+    # have the fullname. The path is in the popup title.
     var path = split(popup_getoptions(main_id).title)[0]
     filename = $'{path}/{filename}'
 
     var file_content = []
     if bufexists(filename)
       file_content = getbufline(filename, 1, '$')
-    # TODO: Extra check if the file is readable or not
+    # TODO: check if you can remove the expand()
     elseif filereadable($'{expand(filename)}')
       file_content = readfile($'{expand(filename)}')
     else
@@ -134,9 +136,6 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_pattern: strin
       # set 'synmaxcol' for avoiding crashing if some readable file has embedded
       # figures. Figure generate lines with >80000 columns and the internal
       # engine to figure out the syntax will fail.
-      # If you want to preview you have to read the file anyways, so
-      # better off be nice with the syntax parsing putting a cap on the max
-      # columns.
       var old_synmaxcol = &synmaxcol
       &synmaxcol = 300
       var buf_extension = $'{fnamemodify(filename, ":e")}'
@@ -229,7 +228,6 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
 
   # Preview handling
   var preview_id = -1
-
   var show_preview = false
   if search_type == 'file'
     show_preview = get(g:poptools_config, 'preview_file', true)
@@ -302,21 +300,21 @@ export def FindFileOrDir(search_type: string)
   endif
 
   # Main
-  var substring = input($"'{fnamemodify(getcwd(), ':~')}'\n {search_type} to search ('enter' for all): ")
+  var what = input($"'{fnamemodify(getcwd(), ':~')}'\n {search_type} to search ('enter' for all): ")
   redraw
   echo "If the search takes too long hit CTRL-C few times and try to
         \ narrow down your search."
-  var hidden = substring[0] == '.' ? '' : '*'
-  var results = getcompletion($'**/{hidden}{substring}', search_type, true)
+  var hidden = what[0] == '.' ? '' : '*'
+  var results = getcompletion($'**/{hidden}{what}', search_type, true)
 
   if empty(results)
-    echo $"'{substring}' pattern not found!"
+    echo $"'{what}' pattern not found!"
   else
-    # TODO The title MUST contain the path followed by a space, otherwise it
-    # won't be possible to preview and jump to files. This can be improved.
-    var title = $" {fnamemodify(getcwd(), ':~')}, {search_type}s '{substring}': "
-    if empty(substring)
-      title = $" Search results for {search_type}s in {fnamemodify(getcwd(), ':~')}: "
+    # OBS: the title MUST have filepath followed by \s because it is used to
+    # reconstruct the full path filename
+    var title = $" {fnamemodify(getcwd(), ':~')} - {search_type}s '{what}': "
+    if empty(what)
+      title = $" {fnamemodify(getcwd(), ':~')} - Search results for {search_type}s: "
     endif
 
     if search_type == 'file' || search_type == 'file_in_path'
@@ -341,9 +339,11 @@ export def Vimgrep()
     return
   endif
 
-  var files = input($"\n in which files: ")
+  var files = input($"\n in which files ('empty' for current file, '*' for all files): ")
   if empty(files)
-    files = '*'
+    files = '%'
+  else
+    files = $'**/{files}'
   endif
 
   var vimgrep_options = input($" Vimgrep options (empty = 'gj'): ")
@@ -351,7 +351,7 @@ export def Vimgrep()
     vimgrep_options = 'gj'
   endif
 
-  var cmd = $'vimgrep /{what}/{vimgrep_options} **/{files}'
+  var cmd = $'vimgrep /{what}/{vimgrep_options} {files}'
   redraw
   echo cmd
   exe cmd
@@ -365,55 +365,57 @@ export def Grep()
     return
   endif
 
-  var search_dir = getcwd()
   # Main
-  # TODO fnamemodify(getcwd(), ':.') does not work. Obviously.
-  var what = input($"'{fnamemodify(search_dir, ':~')}'\n What to find: ")
+  var what = input($"'{fnamemodify(getcwd(), ':~')}'\n What to find: ")
   if empty(what)
     return
   endif
 
   var files = input($"\n in which files ('empty' for current file, '*' for all files): ")
+  var search_dir = getcwd()
   if empty(files)
     search_dir = expand("%:h")
     files = expand("%:t")
   endif
 
+  # External search command definitions
   var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {files}"'
   # var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {files}|findstr /V /R \"^\\..*\\\\\""'
   #  The following is faster because it uses cmd.exe
   # var cmd_win_default = $'cmd.exe /c cd {shellescape(search_dir)} && findstr /C:{shellescape(what)} /N /S {files} | findstr /V /R "^\..*\\\\"'
   var cmd_nix_default = $'cd {search_dir} && grep -n -r --include="{files}" "{what}" .'
 
+  # TODO: fix this crap! User cannot decide commands!
   var cmd_win = get(g:poptools_config, 'grep_cmd_win', cmd_win_default)
   var cmd_nix = get(g:poptools_config, 'grep_cmd_nix', cmd_nix_default)
 
+  # clean up the command-line
   redraw
+
   # Get results
   var results = []
   if has('win32')
     # In windows we get rid of the ^M and we filter eventual blank lines
     # results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '', 'g'))->filter('v:val != ""')
-    # TODO Hidden files are shown and there is no filter for filereadable()
     echom cmd_win
     results = systemlist(cmd_win)
   else
-    # get rid of eventual blank lines
-    # results = systemlist(cmd_nix)->filter((_, val) => filereadable(expand(val)))
     echom cmd_nix
     results = systemlist(cmd_nix)
   endif
 
-  # TODO The title MUST contain the path followed by a space, otherwise it
-  # won't be possible to preview and jump to files. This can be improved.
+  # OBS: the 'title' MUST have filepath followed by \s because it is used to
+  # reconstruct the full path filename in the Callbacks and the show preview
+  # mechanism
   var title = $" {fnamemodify(search_dir, ':~')} - Grep results for '{what}' in '{files}': "
   if !empty(results)
     # Results from grep are given in the form path/to/file.ext:num: and we
     # have to extract only the filename from there
     results->matchstr('^\S\{-}\ze:')
             ->filter((_, val) => filereadable(expand(val)))
+            ->map((_, val) => substitute(val, '^\S\{-}\ze:', (m) => fnamemodify(m[0], ':.'), 'g'))
             # TODO: See if you can do better
-    results = results->map((_, val) => substitute(val, '^\S\{-}\ze:', (m) => fnamemodify(m[0], ':.'), 'g'))
+    # results = results->map((_, val) => substitute(val, '^\S\{-}\ze:', (m) => fnamemodify(m[0], ':.'), 'g'))
 
     ShowPopup(title, results, 'grep', what)
   else
@@ -424,7 +426,7 @@ enddef
 export def Buffers()
   var results = getcompletion('', 'buffer', true)
                 ->map((_, val) => fnamemodify(val, ':.'))
-  var title = " Buffers: "
+  var title = $" {fnamemodify(getcwd(), ':~')} - Buffers: "
   ShowPopup(title, results, 'buffer')
 enddef
 
@@ -439,7 +441,7 @@ export def RecentFiles()
   var results =  copy(v:oldfiles)
     ->filter((_, val) => filereadable(expand(val)))
     ->map((_, val) => fnamemodify(val, ':.'))
-  var title = $" Recently opened files: "
+  var title = $" {fnamemodify(getcwd(), ':~')} - Recently opened files: "
   ShowPopup(title, results, 'recent_files')
 enddef
 
