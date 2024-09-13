@@ -393,6 +393,13 @@ export def Grep()
     search_dir = expand("%:h")
     files = expand("%:t")
   endif
+  var current_wildmenu = &wildmenu
+  set nowildmenu
+  search_dir = input($"\n in which directory (you can use 'tab'): ", './', 'dir')
+  if empty(search_dir) || search_dir == './'
+    search_dir = getcwd()
+  endif
+  &wildmenu = current_wildmenu
 
   # External search command definitions
   var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {files}"'
