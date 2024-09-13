@@ -358,17 +358,14 @@ export def Vimgrep()
     return
   endif
 
-  var files = input($"\n in which files ('empty' for current file, '*' for all files): ")
+  var files = input($"\n in which files ('empty' for current file, '*' for all files): ", '*.')
   if empty(files)
     files = '%'
   else
     files = $'**/{files}'
   endif
 
-  var vimgrep_options = input($" Vimgrep options (empty = 'gj'): ")
-  if empty(vimgrep_options)
-    vimgrep_options = 'gj'
-  endif
+  var vimgrep_options = input($" Vimgrep options (empty = 'gj'): ", 'gj')
 
   var cmd = $'vimgrep /{what}/{vimgrep_options} {files}'
   redraw
@@ -390,7 +387,7 @@ export def Grep()
     return
   endif
 
-  var files = input($"\n in which files ('empty' for current file, '*' for all files): ")
+  var files = input($"\n in which files ('empty' for current file, '*' for all files): ", '*.')
   var search_dir = getcwd()
   if empty(files)
     search_dir = expand("%:h")
@@ -427,11 +424,12 @@ export def Grep()
   # reconstruct the full path filename in the Callbacks and the show preview
   # mechanism
   var title = $" {fnamemodify(search_dir, ':~')} - Grep results for '{what}' in '{files}': "
+  # echom matchstr(expand(results[1]), '^\S\{-}\ze:')
   if !empty(results)
     # Results from grep are given in the form path/to/file.ext:num: and we
     # have to extract only the filename from there
     results->matchstr('^\S\{-}\ze:')
-            ->filter((_, val) => filereadable(expand(val)))
+            ->filter((_, val) => filereadable(expand(string(val))))
             ->map((_, val) => substitute(val, '^\S\{-}\ze:', (m) => fnamemodify(m[0], ':.'), 'g'))
 
     ShowPopup(title, results, 'grep', what)
