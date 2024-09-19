@@ -79,9 +79,11 @@ enddef
 # ------- Filter functions
 # You  may use external programs to count the lines if 'readfile()' is too
 # slow, e.g.
-# var file_length = has('win32') ? str2nr(system('...')) : str2nr(system($'wc -l {filename}')->matchstr('\s*\zs\d*'))
+# var file_length = has('win32') ? str2nr(system('...')) : str2nr(system($'wc
+# -l {filename}')->matchstr('\s*\zs\d*'))
 # var buf_lines = has('win32')
-#   ? systemlist($'powershell -c "Get-Content {filename} | Select-Object -Skip ({firstline} - 1) -First ({lastline} - {firstline} + 1)"')
+#   ? systemlist($'powershell -c "Get-Content {filename} | Select-Object -Skip
+#   ({firstline} - 1) -First ({lastline} - {firstline} + 1)"')
 #   : systemlist($'sed -n "{firstline},{lastline}p" {filename}')
 #
 # For the syntax highlight, you may use the 'GetFiletypeByFilename()' function
@@ -141,16 +143,18 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_type: string, 
     # Syntax highlight if it creates problems, disable it. It is not
     # bulletproof
     if get(g:poptools_config, 'preview_syntax', true)
-      # set 'synmaxcol' for avoiding crashing if some readable file has embedded
+      # set 'synmaxcol' for avoiding crashing if some readable file has
+      # embedded
       # figures. Figure generate lines with >80000 columns and the internal
       # engine to figure out the syntax will fail.
       var old_synmaxcol = &synmaxcol
       &synmaxcol = 300
       var buf_extension = $'{fnamemodify(filename, ":e")}'
-      var found_filetypedetect_cmd = autocmd_get({group: 'filetypedetect'})->filter($'v:val.pattern =~ "*\\.{buf_extension}$"')
+      var found_filetypedetect_cmd = autocmd_get({group:
+        'filetypedetect'})->filter($'v:val.pattern =~ "*\\.{buf_extension}$"')
       var set_filetype_cmd = empty(found_filetypedetect_cmd)
-         ? '&filetype = ""'
-         : found_filetypedetect_cmd[0].cmd
+        ? '&filetype = ""'
+        : found_filetypedetect_cmd[0].cmd
       win_execute(preview_id, set_filetype_cmd)
       &synmaxcol = old_synmaxcol
     endif
@@ -164,14 +168,14 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_type: string, 
 enddef
 
 def ClosePopups(main_id: number, preview_id: number)
-    if preview_id != -1
-      popup_close(preview_id)
-    endif
-    # Remove the callback because popup_close() triggers the callback anyway.
-    var opts = popup_getoptions(main_id)
-    opts.callback = ''
-    popup_setoptions(main_id, opts)
-    popup_close(main_id)
+  if preview_id != -1
+    popup_close(preview_id)
+  endif
+  # Remove the callback because popup_close() triggers the callback anyway.
+  var opts = popup_getoptions(main_id)
+  opts.callback = ''
+  popup_setoptions(main_id, opts)
+  popup_close(main_id)
 enddef
 
 def PopupFilter(main_id: number, preview_id: number, key: string, search_type: string, search_pattern: string): bool
@@ -196,16 +200,16 @@ def PopupFilter(main_id: number, preview_id: number, key: string, search_type: s
 enddef
 
 def ShowColorscheme(main_id: number, current_background: string)
-    # Circular selection
-    var idx = line('.', main_id) % (line('$', main_id) + 1)
-    # I need this check because when user makes a selection with <cr> this
-    # function is called anyways and idx will be 0
-    if idx > 0
-      var scheme = getbufline(winbufnr(main_id), idx)[0]
-      exe $'colorscheme {scheme}'
-      &background = current_background
-      hi link PopupSelected PmenuSel
-    endif
+  # Circular selection
+  var idx = line('.', main_id) % (line('$', main_id) + 1)
+  # I need this check because when user makes a selection with <cr> this
+  # function is called anyways and idx will be 0
+  if idx > 0
+    var scheme = getbufline(winbufnr(main_id), idx)[0]
+    exe $'colorscheme {scheme}'
+    &background = current_background
+    hi link PopupSelected PmenuSel
+  endif
 enddef
 
 def PopupFilterColor(main_id: number, key: string, current_colorscheme: string, current_background: string): bool
@@ -272,10 +276,12 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
 
     # Opts for preview_id
     opts.col = popup_width + popup_width / 2 + 2
-    preview_id = popup_create("Something went wrong. Run :call popup_clear() to close.", opts)
+    preview_id = popup_create("Something went wrong.
+          \ Run :call popup_clear() to close.", opts)
 
     # Options for main_id, will be set later on
-    opts.filter = (id, key) => PopupFilter(id, preview_id, key, search_type, search_pattern)
+    opts.filter = (id, key) => PopupFilter(id, preview_id, key, search_type,
+      search_pattern)
 
     # TODO Study how popus are sized and positioned on screen
     # If too many results, the scrollbar overlap the preview popup
@@ -286,14 +292,16 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   endif
 
   if search_type == 'color'
-    opts.filter = (id, key) => PopupFilterColor(id, key, current_colorscheme, current_background)
+    opts.filter = (id, key) => PopupFilterColor(id, key, current_colorscheme,
+      current_background)
     var init_highlight_location = index(results, current_colorscheme)
     win_execute(main_id, $'norm {init_highlight_location }j')
   endif
 
   # Callback switch for main popup
   var PopupCallback: func
-  if index(['file', 'file_in_path', 'recent_files', 'buffer'], search_type) != -1
+  if index(['file', 'file_in_path', 'recent_files', 'buffer'],
+        \ search_type) != -1
     PopupCallback = (id, idx) => PopupCallbackFileBuffer(id, preview_id, idx)
   elseif search_type == 'dir'
     PopupCallback = PopupCallbackDir
@@ -310,38 +318,71 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
 
 enddef
 
-# ---- API. The following functions are associated to commands in the plugin file.
-export def FindFileOrDir(search_type: string)
+# ---- API. The following functions are associated to commands in the plugin
+#  file.
+export def FindFile(search_type: string)
   # Guard
-  if (search_type == 'file' || search_type == 'file_in_path') && getcwd() == expand('~')
+  if (search_type == 'file' || search_type == 'file_in_path')
+        \  && getcwd() == expand('~')
     Echoerr("You are in your home directory. Too many results.")
     return
   endif
 
   # Main
-  var what = input($"'{fnamemodify(getcwd(), ':~')}'\n {search_type} name to search ('enter' for all): ")
+  var what = input($"'{fnamemodify(getcwd(), ':~')}'\nFile name to search ('enter' for all): ")
+  var hidden = what[0] == '.' ? '' : '*'
+
+  var search_dir = ''
+  if (search_type == 'file' || search_type == 'file_in_path')
+    var current_wildmenu = &wildmenu
+    set nowildmenu
+    search_dir = input($"\n in which directory (you can use 'tab'): ", './', 'dir')
+    if empty(search_dir) || search_dir == './'
+      search_dir = getcwd()
+    endif
+    &wildmenu = current_wildmenu
+  endif
+  var results = getcompletion($'{search_dir}/**/{hidden}{what}',
+        \  search_type, true)
+
   redraw
   echo "If the search takes too long hit CTRL-C few times and try to
         \ narrow down your search."
+  if empty(results)
+    echo $"'{what}' pattern not found!"
+  else
+    # OBS: the title MUST have filepath followed by \s because it is used to
+    # reconstruct the full path filename
+    var title = $" {fnamemodify(getcwd(), ':~')} - Files '{what}': "
+    if empty(what)
+      title = $" {fnamemodify(getcwd(), ':~')} - Search results for Files: "
+    endif
+
+    results ->filter('v:val !~ "\/$"')
+      ->filter((_, val) => filereadable(expand(val)))
+      ->map((_, val) => fnamemodify(val, ':.'))
+    ShowPopup(title, results, search_type)
+  endif
+enddef
+
+export def FindDir()
+  # Main
+  var what = input($"'{fnamemodify(getcwd(), ':~')}'\nDir name to search ('enter' for all): ")
   var hidden = what[0] == '.' ? '' : '*'
-  var results = getcompletion($'**/{hidden}{what}', search_type, true)
+
+  var results = getcompletion($'**/{hidden}{what}',
+        \  'dir', true)
 
   if empty(results)
     echo $"'{what}' pattern not found!"
   else
     # OBS: the title MUST have filepath followed by \s because it is used to
     # reconstruct the full path filename
-    var title = $" {fnamemodify(getcwd(), ':~')} - {search_type}s '{what}': "
+    var title = $" {fnamemodify(getcwd(), ':~')} - Directories '{what}': "
     if empty(what)
-      title = $" {fnamemodify(getcwd(), ':~')} - Search results for {search_type}s: "
+      title = $" {fnamemodify(getcwd(), ':~')} - Search results for Directories: "
     endif
-
-    if search_type == 'file' || search_type == 'file_in_path'
-      results ->filter('v:val !~ "\/$"')
-              ->filter((_, val) => filereadable(expand(val)))
-              ->map((_, val) => fnamemodify(val, ':.'))
-    endif
-    ShowPopup(title, results, search_type)
+    ShowPopup(title, results, 'dir')
   endif
 enddef
 
@@ -358,7 +399,8 @@ export def Vimgrep()
     return
   endif
 
-  var files = input($"\n in which files ('empty' for current file, '*' for all files): ", '*.')
+  var files = input($"\n in which files ('empty' for current file,
+        \  '*' for all files): ", '*.')
   if empty(files)
     files = '%'
   else
@@ -374,6 +416,31 @@ export def Vimgrep()
   copen
 enddef
 
+export def GrepInBuffer()
+  # The format is like grep, i.e. filename:linenumber:
+  # Main
+  var what = input("Find in current buffer: ")
+  if empty(what)
+    return
+  endif
+
+  var initial_pos = getcursorcharpos()
+  cursor(1, 1)
+  var curr_line = line('.')
+  var results = []
+  while curr_line != 0
+    curr_line = search(what, 'W')
+    add(results, $'{expand("%:.")}:{curr_line}:')
+  endwhile
+  remove(results, -1)
+  setcursorcharpos(initial_pos[1], initial_pos[2], initial_pos[3])
+
+  var title = $" {fnamemodify(getcwd(), ':~')} - Search results for '{what}': "
+
+  ShowPopup(title, results, 'grep', what)
+enddef
+
+
 export def Grep()
   # Guard
   if getcwd() == expand('~')
@@ -387,26 +454,31 @@ export def Grep()
     return
   endif
 
-  var files = input($"\n in which files ('empty' for current file, '*' for all files): ", '*.')
-  var search_dir = getcwd()
-  if empty(files)
-    search_dir = expand("%:h")
-    files = expand("%:t")
-  endif
+  var files = expand('%:t')
+  var search_dir = expand('%:h')
+
+  files = input($"\n in which files ('*' for all files): ", '*.')
   var current_wildmenu = &wildmenu
   set nowildmenu
-  search_dir = input($"\n in which directory (you can use 'tab'): ", './', 'dir')
+  search_dir = input($"\n in which directory (you can use 'tab'): ",
+        \  './', 'dir')
   if empty(search_dir) || search_dir == './'
     search_dir = getcwd()
   endif
   &wildmenu = current_wildmenu
 
+
   # External search command definitions
-  var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {files}"'
-  # var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {files}|findstr /V /R \"^\\..*\\\\\""'
+  var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass
+  \ -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {files}"'
+  # var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass
+  # -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S
+  #  {files}|findstr /V /R \"^\\..*\\\\\""'
   #  The following is faster because it uses cmd.exe
-  # var cmd_win_default = $'cmd.exe /c cd {shellescape(search_dir)} && findstr /C:{shellescape(what)} /N /S {files} | findstr /V /R "^\..*\\\\"'
-  var cmd_nix_default = $'cd {search_dir} && grep -n -r --include="{files}" "{what}" .'
+  # var cmd_win_default = $'cmd.exe /c cd {shellescape(search_dir)} && findstr
+  # /C:{shellescape(what)} /N /S {files} | findstr /V /R "^\..*\\\\"'
+  var cmd_nix_default = $'cd {search_dir} && grep -n -r
+        \ --include="{files}" "{what}" .'
 
   # TODO: fix this crap! User cannot decide commands!
   var cmd_win = get(g:poptools_config, 'grep_cmd_win', cmd_win_default)
@@ -419,7 +491,8 @@ export def Grep()
   var results = []
   if has('win32')
     # In windows we get rid of the ^M and we filter eventual blank lines
-    # results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '', 'g'))->filter('v:val != ""')
+    # results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '',
+    # 'g'))->filter('v:val != ""')
     echom cmd_win
     results = systemlist(cmd_win)
   else
@@ -430,14 +503,16 @@ export def Grep()
   # OBS: the 'title' MUST have filepath followed by \s because it is used to
   # reconstruct the full path filename in the Callbacks and the show preview
   # mechanism
-  var title = $" {fnamemodify(search_dir, ':~')} - Grep results for '{what}' in '{files}': "
+  var title = $" {fnamemodify(search_dir, ':~')}
+        \  - Grep results for '{what}' in '{files}': "
   # echom matchstr(expand(results[1]), '^\S\{-}\ze:')
   if !empty(results)
     # Results from grep are given in the form path/to/file.ext:num: and we
     # have to extract only the filename from there
     results->matchstr('^\S\{-}\ze:')
-            ->filter((_, val) => filereadable(expand(string(val))))
-            ->map((_, val) => substitute(val, '^\S\{-}\ze:', (m) => fnamemodify(m[0], ':.'), 'g'))
+      ->filter((_, val) => filereadable(expand(string(val))))
+      ->map((_, val) => substitute(val, '^\S\{-}\ze:', (m) =>
+        fnamemodify(m[0], ':.'), 'g'))
 
     ShowPopup(title, results, 'grep', what)
   else
@@ -447,7 +522,7 @@ enddef
 
 export def Buffers()
   var results = getcompletion('', 'buffer', true)
-                ->map((_, val) => fnamemodify(val, ':.'))
+    ->map((_, val) => fnamemodify(val, ':.'))
   var title = " Buffers: "
   ShowPopup(title, results, 'buffer')
 enddef

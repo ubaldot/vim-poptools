@@ -29,13 +29,14 @@ g:vim_poptools_loaded = true
 
 import autoload "../lib/funcs.vim"
 
-command! PoptoolsFindFile funcs.FindFileOrDir('file')
-command! PoptoolsFindFileInPath funcs.FindFileOrDir('file_in_path')
-command! PoptoolsFindDir funcs.FindFileOrDir('dir')
+command! PoptoolsFindFile funcs.FindFile('file')
+command! PoptoolsFindFileInPath funcs.FindFile('file_in_path')
+command! PoptoolsFindDir funcs.FindDir()
 command! PoptoolsBuffers funcs.Buffers()
 command! PoptoolsRecentFiles funcs.RecentFiles()
 command! PoptoolsCmdHistory funcs.CmdHistory()
 command! PoptoolsGrep funcs.Grep()
+command! PoptoolsGrepInBuffer funcs.GrepInBuffer()
 command! PoptoolsVimgrep funcs.Vimgrep()
 command! PoptoolsColorscheme funcs.Colorscheme()
 command! PoptoolsLastSearch funcs.LastSearch()

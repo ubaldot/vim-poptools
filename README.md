@@ -36,6 +36,7 @@ the commands are self-explanatory:
 :PoptoolsRecentFiles
 :PoptoolsCmdHistory
 :PoptoolsColorscheme # The displayed colors depends on the value of :h 'background'
+:PoptoolsGrepInBuffer # Find pattern in the current buffer
 :PoptoolsGrep # External grep. Grep command is displayed.
 :PoptoolsVimgrep # Vimgrep, show results in the quickfix-list instead of a popup.
 :PoptoolsLastSearch # Show the last search results
