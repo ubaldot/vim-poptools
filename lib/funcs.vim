@@ -136,7 +136,7 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_type: string, 
     # Highlight grep matches
     if !empty(search_pattern)
       win_execute(preview_id, $'normal! {line_nr}gg')
-      win_execute(preview_id, $'setlocal cursorline')
+      # win_execute(preview_id, $'setlocal cursorline')
       win_execute(preview_id, $'match Search /{search_pattern}/')
     endif
 
@@ -243,6 +243,10 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     maxheight: popup_height,
     minwidth: popup_width,
     maxwidth: popup_width,
+    cursorline: 1,
+    mapping: 0,
+    wrap: 0,
+    drag: 1
   }
 
   var main_id = popup_menu(results, opts)
@@ -320,6 +324,8 @@ enddef
 
 # ---- API. The following functions are associated to commands in the plugin
 #  file.
+#
+
 export def FindFile(search_type: string)
   # Guard
   if (search_type == 'file' || search_type == 'file_in_path')
@@ -416,13 +422,47 @@ export def Vimgrep()
   copen
 enddef
 
+# TODO: These two functions are used to mimic the in_search feature for
+# GrepInBuffer() function. Not sure if it is the best thing to do. You can
+# always comment/uncomment in GrepInBuffer()
+var match_id = 0
+def GrepInBufferHighlight()
+  augroup SEARCH_HI | autocmd!
+    autocmd CmdlineChanged @ {
+        if match_id > 0
+          matchdelete(match_id)
+        endif
+        # cursor(1, 1)
+        var line_nr = search(getcmdline(), 'w')
+        var pattern = getcmdline()
+        # Highlight only the current line
+        var what_to_match = $'\%{line_nr}l{pattern}'
+        match_id = matchadd('Search', what_to_match)
+        # Highlight all the matches instead or the current line
+        # match_id = matchadd('Search', getcmdline())
+        redraw!
+    }
+    autocmd CmdlineLeave @ if match_id > 0 | matchdelete(match_id) | match_id = 0 | endif
+  augroup END
+enddef
+
+def GrepInBufferHighlightClear()
+  autocmd! SEARCH_HI
+  augroup! SEARCH_HI
+  if match_id > 0
+    matchdelete(match_id)
+  endif
+enddef
+
 export def GrepInBuffer()
   # The format is like grep, i.e. filename:linenumber:
   # Main
+  GrepInBufferHighlight()
   var what = input("Find in current buffer: ")
   if empty(what)
     return
   endif
+  GrepInBufferHighlightClear()
 
   var initial_pos = getcursorcharpos()
   cursor(1, 1)
