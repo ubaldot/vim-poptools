@@ -80,8 +80,7 @@ by the Vim options settings. The default "grep" commands are the following:
 <!-- cmd_win_default = $'cmd.exe /c cd {shellescape(getcwd())} && findstr /C:{shellescape(what)} /N /S {files} | findstr /V /R "^\..*\\\\"' -->
 
 ```
-  cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "findstr /C:{shellescape(what)} /N /S {search_dir}\\{files}"'
-  cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "for /R "{search_dir}" %f in ({files}) do @findstr /C:"{what}" /N "%f""'
+  cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "for /R \"{search_dir}\" %f in ({files}) do @findstr /C:\"{what}\" /N \"%f\""' # Not working yet
   cmd_nix_default = $'grep -nrH --include="{files}" "{what}" {search_dir}'
 ```
 

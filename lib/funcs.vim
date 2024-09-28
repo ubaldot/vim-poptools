@@ -330,8 +330,6 @@ enddef
 
 # ---- API. The following functions are associated to commands in the plugin
 #  file.
-#
-
 export def FindFile(search_type: string)
   # Guard
   if (search_type == 'file' || search_type == 'file_in_path')
