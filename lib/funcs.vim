@@ -441,7 +441,8 @@ def GrepInBufferHighlight()
       var pattern = getcmdline()
       # Highlight only the current line
       var what_to_match = $'\%{line_nr}l{pattern}'
-      match_id = matchadd('Search', what_to_match)
+      # var what_to_match = $'{pattern}'
+      match_id = matchadd('IncSearch', what_to_match)
       # Highlight all the matches instead or the current line
       # match_id = matchadd('Search', getcmdline())
       redraw!
