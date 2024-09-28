@@ -33,7 +33,11 @@ def PopupCallbackGrep(id: number, preview_id: number, idx: number)
     var line = selection->matchstr(':\zs\d*\ze:')
 
     var path = split(popup_getoptions(id).title)[0]
-    exe $'edit {path}/{file}'
+    if getcwd() == path
+      exe $'edit {path}/{file}'
+    else
+      exe $'edit {file}'
+    endif
     cursor(str2nr(line), 1)
 
   endif
@@ -108,7 +112,9 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_type: string, 
     # In case of Buffers or Recent files, that is not needed
     if index(['file', 'file_in_path', 'grep'], search_type) != -1
       var path = split(popup_getoptions(main_id).title)[0]
-      filename = $'{path}/{filename}'
+      if getcwd() == path
+        filename = $'{path}/{filename}'
+      endif
     endif
 
     var file_content = []
@@ -151,7 +157,7 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_type: string, 
       &synmaxcol = 300
       var buf_extension = $'{fnamemodify(filename, ":e")}'
       var found_filetypedetect_cmd = autocmd_get({group:
-        'filetypedetect'})->filter($'v:val.pattern =~ "*\\.{buf_extension}$"')
+      'filetypedetect'})->filter($'v:val.pattern =~ "*\\.{buf_extension}$"')
       var set_filetype_cmd = empty(found_filetypedetect_cmd)
         ? '&filetype = ""'
         : found_filetypedetect_cmd[0].cmd
@@ -429,18 +435,18 @@ var match_id = 0
 def GrepInBufferHighlight()
   augroup SEARCH_HI | autocmd!
     autocmd CmdlineChanged @ {
-        if match_id > 0
-          matchdelete(match_id)
-        endif
-        # cursor(1, 1)
-        var line_nr = search(getcmdline(), 'w')
-        var pattern = getcmdline()
-        # Highlight only the current line
-        var what_to_match = $'\%{line_nr}l{pattern}'
-        match_id = matchadd('Search', what_to_match)
-        # Highlight all the matches instead or the current line
-        # match_id = matchadd('Search', getcmdline())
-        redraw!
+      if match_id > 0
+        matchdelete(match_id)
+      endif
+      # cursor(1, 1)
+      var line_nr = search(getcmdline(), 'w')
+      var pattern = getcmdline()
+      # Highlight only the current line
+      var what_to_match = $'\%{line_nr}l{pattern}'
+      match_id = matchadd('Search', what_to_match)
+      # Highlight all the matches instead or the current line
+      # match_id = matchadd('Search', getcmdline())
+      redraw!
     }
     autocmd CmdlineLeave @ if match_id > 0 | matchdelete(match_id) | match_id = 0 | endif
   augroup END
@@ -509,16 +515,17 @@ export def Grep()
 
 
   # External search command definitions
+  # var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass
+  #       \ -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {files}"'
   var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass
-  \ -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {files}"'
+        \  -Command "for /R \"{search_dir}\" %f in ({files}) do @findstr /C:\"{what}\" /N \"%f\""'
   # var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass
   # -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S
   #  {files}|findstr /V /R \"^\\..*\\\\\""'
   #  The following is faster because it uses cmd.exe
   # var cmd_win_default = $'cmd.exe /c cd {shellescape(search_dir)} && findstr
   # /C:{shellescape(what)} /N /S {files} | findstr /V /R "^\..*\\\\"'
-  var cmd_nix_default = $'cd {search_dir} && grep -n -r
-        \ --include="{files}" "{what}" .'
+  var cmd_nix_default = $'grep -nrH --include="{files}" "{what}" {search_dir}'
 
   # TODO: fix this crap! User cannot decide commands!
   var cmd_win = get(g:poptools_config, 'grep_cmd_win', cmd_win_default)
@@ -543,15 +550,12 @@ export def Grep()
   # OBS: the 'title' MUST have filepath followed by \s because it is used to
   # reconstruct the full path filename in the Callbacks and the show preview
   # mechanism
-  var title = $" {fnamemodify(search_dir, ':~')}
+  var title = $" {fnamemodify(getcwd(), ':~')}
         \  - Grep results for '{what}' in '{files}': "
-  # echom matchstr(expand(results[1]), '^\S\{-}\ze:')
   if !empty(results)
     # Results from grep are given in the form path/to/file.ext:num: and we
     # have to extract only the filename from there
-    results->matchstr('^\S\{-}\ze:')
-      ->filter((_, val) => filereadable(expand(string(val))))
-      ->map((_, val) => substitute(val, '^\S\{-}\ze:', (m) =>
+    results ->map((_, val) => substitute(val, '^\S\{-}\ze:', (m) =>
         fnamemodify(m[0], ':.'), 'g'))
 
     ShowPopup(title, results, 'grep', what)
