@@ -496,10 +496,13 @@ export def Grep()
   endif
 
   # Main
+  GrepInBufferHighlight()
   var what = input($"'{fnamemodify(getcwd(), ':~')}'\n String to find: ")
   if empty(what)
+    GrepInBufferHighlightClear()
     return
   endif
+  GrepInBufferHighlightClear()
 
   var files = expand('%:t')
   var search_dir = expand('%:h')
