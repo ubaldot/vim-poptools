@@ -466,6 +466,7 @@ export def GrepInBuffer()
   GrepInBufferHighlight()
   var what = input("Find in current buffer: ")
   if empty(what)
+    GrepInBufferHighlightClear()
     return
   endif
   GrepInBufferHighlightClear()
