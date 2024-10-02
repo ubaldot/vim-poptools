@@ -459,16 +459,21 @@ def GrepInBufferHighlightClear()
   endif
 enddef
 
-export def GrepInBuffer()
+export def GrepInBuffer(what_user: string = '')
   # The format is like grep, i.e. filename:linenumber:
   # Main
-  GrepInBufferHighlight()
-  var what = input("Find in current buffer: ")
-  if empty(what)
+  var what = ''
+  if empty(what_user)
+    GrepInBufferHighlight()
+    what = input("Find in current buffer: ")
+    if empty(what)
+      GrepInBufferHighlightClear()
+      return
+    endif
     GrepInBufferHighlightClear()
-    return
-  endif
-  GrepInBufferHighlightClear()
+  else
+    what = what_user
+ endif
 
   var initial_pos = getcursorcharpos()
   cursor(1, 1)
