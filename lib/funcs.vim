@@ -523,10 +523,10 @@ export def Grep()
 
 
   # External search command definitions
-  # var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass
-  #       \ -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {files}"'
   var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass
-        \  -Command "for /R \"{search_dir}\" %f in ({files}) do @findstr /C:\"{what}\" /N \"%f\""'
+        \ -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {files}"'
+  # var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass
+  #       \  -Command "for /R \"{search_dir}\" %f in ({files}) do @findstr /C:\"{what}\" /N \"%f\""'
   # var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass
   # -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S
   #  {files}|findstr /V /R \"^\\..*\\\\\""'
@@ -549,7 +549,9 @@ export def Grep()
     # results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '',
     # 'g'))->filter('v:val != ""')
     echom cmd_win
-    results = systemlist(cmd_win)
+    results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '',
+      'g'))->filter('v:val != ""')
+
   else
     echom cmd_nix
     results = systemlist(cmd_nix)
