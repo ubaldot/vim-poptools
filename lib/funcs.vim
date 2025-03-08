@@ -335,7 +335,7 @@ def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: 
   : 2 * popup_width + 4
 
   var opts = {
-    title: ' Search: ',
+    title: ' Filter: ',
     minwidth: prompt_width,
     maxwidth: prompt_width,
     line: main_id_core_line - 4,
