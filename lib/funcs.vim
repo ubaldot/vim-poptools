@@ -2,8 +2,8 @@ vim9script
 
 # TODO Exclude 'wildignore' paths in Grep (it uses an external program)
 # TODO Study how can you make popup_width and popup_height them parametric
-var popup_width = 2 / 3 * &columns
-var popup_height = &lines / 2
+var popup_width = -1
+var popup_height = -1
 
 var last_results = []
 var last_title = ''
@@ -240,11 +240,14 @@ def ShowPromptPopup(search_type: string, search_pattern: string)
   var main_id_core_line = popup_getpos(main_id).core_line
   var main_id_core_col = popup_getpos(main_id).core_col
   # echom popup_getpos(main_id)
+  var prompt_width = preview_id == -1
+  ? popup_width + 1
+  : 2 * popup_width + 4
 
   var opts = {
     title: ' Search: ',
-    minwidth: 2 * popup_width + 4,
-    maxwidth: 2 * popup_width + 4,
+    minwidth: prompt_width,
+    maxwidth: prompt_width,
     line: main_id_core_line - 4,
     col: main_id_core_col - 1,
     borderchars: ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
@@ -269,6 +272,8 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   hi link PopupSelected PmenuSel
 
   # Set script-local variables
+  popup_width = eval('&columns / 3') * 2
+  popup_height = &lines / 2
   main_id = -1
   preview_id = -1
 
