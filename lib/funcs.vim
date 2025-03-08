@@ -14,18 +14,29 @@ var main_id = -1
 var prompt_id = -1
 var preview_id = -1
 
+# Hide cursor when operating in the popups
+var gui_cursor = []
+
 def Echoerr(msg: string)
   echohl ErrorMsg | echom $"{msg}" | echohl None
+enddef
+
+def RestoreCursor()
+    set t_ve&
+    if hlget("Cursor")[0]->get('cleared', false)
+        hlset(gui_cursor)
+    endif
 enddef
 
 # ----- Callback functions
 def PopupCallbackGrep(id: number, idx: number)
   if idx > 0
+    popup_close(prompt_id, -1)
     if preview_id != -1
-      popup_close(preview_id)
+      popup_close(preview_id, -1)
     endif
 
-    var selection = getbufline(winbufnr(id), idx)[0]
+    var selection = getbufline(winbufnr(main_id), idx)[0]
     # grep return format is 'file.xyz:76: ...'
     # You must extract the filename and the line number.
     # However, the name is not full, and you must reconstruct. The easiest
@@ -43,44 +54,52 @@ def PopupCallbackGrep(id: number, idx: number)
       exe $'edit {file}'
     endif
     cursor(str2nr(line), 1)
-
+    RestoreCursor()
   endif
 enddef
 
 def PopupCallbackFileBuffer(id: number, idx: number)
   if idx > 0
+    popup_close(prompt_id, -1)
     if preview_id != -1
-      popup_close(preview_id)
+      popup_close(preview_id, -1)
     endif
     echo ""
-    var selection = getbufline(winbufnr(id), idx)[0]
+    var selection = getbufline(winbufnr(main_id), idx)[0]
     exe $'edit {selection}'
 
+    RestoreCursor()
   endif
 enddef
 
 def PopupCallbackHistory(id: number, idx: number)
   if idx > 0
+    popup_close(prompt_id, -1)
     if preview_id != -1
-      popup_close(preview_id)
+      popup_close(preview_id, -1)
     endif
-    var cmd = getbufline(winbufnr(id), idx)[0]
+    var cmd = getbufline(winbufnr(main_id), idx)[0]
     exe cmd
+    RestoreCursor()
   endif
 enddef
 
 def PopupCallbackDir(id: number, idx: number)
   if idx > 0
-    var dir = getbufline(winbufnr(id), idx)[0]
+    var dir = getbufline(winbufnr(main_id), idx)[0]
     exe $'cd {dir}'
     pwd
+    popup_close(prompt_id, -1)
+    RestoreCursor()
   endif
 enddef
 
 def PopupCallbackColorscheme(id: number, idx: number)
   if idx > 0
-    var scheme = getbufline(winbufnr(id), idx)[0]
+    var scheme = getbufline(winbufnr(main_id), idx)[0]
     noa exe $'colorscheme {scheme}'
+    popup_close(prompt_id, -1)
+    RestoreCursor()
   endif
 enddef
 
@@ -179,17 +198,18 @@ enddef
 
 def ClosePopups()
   if preview_id != -1
-    popup_close(preview_id)
+    popup_close(preview_id, -1)
   endif
   # Remove the callback because popup_close() triggers the callback anyway.
   var opts = popup_getoptions(main_id)
   opts.callback = ''
   popup_setoptions(main_id, opts)
-  popup_close(main_id)
-  popup_close(prompt_id)
+  popup_close(main_id, -1)
+  popup_close(prompt_id, -1)
+  RestoreCursor()
 enddef
 
-def PopupFilter(id: number, key: string, search_type: string, search_pattern: string): bool
+def PopupFilter(id: number, key: string, results: list<string>, search_type: string, search_pattern: string): bool
 
   if index(['file', 'file_in_path', 'grep'], search_type) != -1
     # Save for last search
@@ -199,15 +219,52 @@ def PopupFilter(id: number, key: string, search_type: string, search_pattern: st
     last_search_pattern = search_pattern
   endif
 
-  # Handle shortcuts
+  var maxheight = popup_getoptions(main_id).maxheight
+
+  # Handle keys
   if key == "\<esc>"
     ClosePopups()
     return true
-  else
-    popup_filter_menu(main_id, key)
-    UpdateFilePreview(search_type, search_pattern)
-    return true
+  elseif key == "\<CR>"
+    popup_close(main_id, getcurpos(main_id)[1])
+  elseif ["\<Right>", "\<PageDown>"]->index(key) > -1
+      win_execute(main_id, 'normal! ' .. maxheight .. "\<C-d>")
+      UpdateFilePreview(search_type, search_pattern)
+  elseif ["\<Left>", "\<PageUp>"]->index(key) > -1
+      win_execute(main_id, 'normal! ' .. maxheight .. "\<C-u>")
+      UpdateFilePreview(search_type, search_pattern)
+  elseif key == "\<Home>"
+      win_execute(main_id, "normal! gg")
+      UpdateFilePreview(search_type, search_pattern)
+  elseif key == "\<End>"
+      win_execute(main_id, "normal! G")
+      UpdateFilePreview(search_type, search_pattern)
+  elseif ["\<tab>", "\<C-n>", "\<Down>", "\<ScrollWheelDown>"]->index(key) > -1
+      var ln = getcurpos(main_id)[1]
+      win_execute(main_id, "normal! j")
+      if ln == getcurpos(main_id)[1]
+          win_execute(main_id, "normal! gg")
+      endif
+      UpdateFilePreview(search_type, search_pattern)
+  elseif ["\<S-Tab>", "\<C-p>", "\<Up>", "\<ScrollWheelUp>"]->index(key) > -1
+      var ln = getcurpos(main_id)[1]
+      win_execute(main_id, "normal! k")
+      if ln == getcurpos(main_id)[1]
+          win_execute(main_id, "normal! G")
+      endif
+      UpdateFilePreview(search_type, search_pattern)
+  # TODO: printable character
+  elseif key =~ '\p'
+      echom "TODO!"
+      # prompt_text ..= key
+      # filtered_items = items_dict->matchfuzzypos(prompt_text, {key: "text"})
   endif
+  else
+    # TODO
+    # Update results
+    # UpdateFilePreview(search_type, search_pattern)
+  endif
+  return true
 enddef
 
 def ShowColorscheme(current_background: string)
@@ -236,7 +293,7 @@ def PopupFilterColor(id: number, key: string, current_colorscheme: string, curre
 enddef
 #
 # -------- MAIN
-def ShowPromptPopup(search_type: string, search_pattern: string)
+def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: string)
   var main_id_core_line = popup_getpos(main_id).core_line
   var main_id_core_col = popup_getpos(main_id).core_col
   # echom popup_getpos(main_id)
@@ -257,7 +314,13 @@ def ShowPromptPopup(search_type: string, search_pattern: string)
     drag: 1,
   }
 
-  prompt_id = popup_create(['> '], opts)
+  # Filter
+  opts.filter = (id, key) => PopupFilter(id, key, results, search_type,
+    search_pattern)
+
+  var prompt_cursor = '▏'
+  var prompt_sign = '> '
+  prompt_id = popup_create([prompt_sign .. prompt_cursor], opts)
 
   # Options for main_id, will be set later on
   # opts.filter = (id, key) => FuzzyFilter(id, key, search_type,
@@ -270,6 +333,11 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   var current_colorscheme = execute('colorscheme')->substitute('\n', '', 'g')
   var current_background = &background
   hi link PopupSelected PmenuSel
+
+  # hide cursor
+  set t_ve=
+  gui_cursor = hlget("Cursor")
+  hlset([{name: 'Cursor', cleared: true}])
 
   # Set script-local variables
   popup_width = eval('&columns / 3') * 2
@@ -291,10 +359,6 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     wrap: 0,
     drag: 1,
   }
-
-  # Options for main_id, will be set later on
-  opts.filter = (id, key) => PopupFilter(id, key, search_type,
-    search_pattern)
 
   # main_id = popup_menu(results, opts)
   main_id = popup_create(results, opts)
@@ -345,7 +409,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     win_execute(main_id, $'norm {init_highlight_location }j')
   endif
 
-  # Callback switch for main popup
+  # Callback switch for main_id
   var PopupCallback: func
   if index(['file', 'file_in_path', 'recent_files', 'buffer'],
         \ search_type) != -1
@@ -363,7 +427,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   opts.callback = PopupCallback
   popup_setoptions(main_id, opts)
 
-  ShowPromptPopup(search_type, search_pattern)
+  ShowPromptPopup(results, search_type, search_pattern)
 enddef
 
 # ---- API. The following functions are associated to commands in the plugin
