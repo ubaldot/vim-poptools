@@ -291,11 +291,17 @@ def PopupFilter(id: number,
       filtered_results_full = results->matchfuzzypos(prompt_text)
       filtered_results = filtered_results_full[0]
     endif
+
+    var opts = popup_getoptions(prompt_id)
+    var num_hits = len(filtered_results)
+    # TODO make it parametric
+    var base_title = ' Filter:'
+    opts.title = $'{base_title} ({num_hits}) '
+    popup_setoptions(prompt_id, opts)
     popup_settext(main_id, filtered_results)
   else
-    # TODO
-    # Update results
-    # UpdateFilePreview(search_type, search_pattern)
+    # TODO handle the default case
+    echo "Unknown character"
   endif
   return true
 enddef
@@ -334,8 +340,8 @@ def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: 
   ? popup_width
   : 2 * popup_width + 2
 
+  var base_title = ' Filter:'
   var opts = {
-    title: ' Filter: ',
     minwidth: prompt_width,
     maxwidth: prompt_width,
     line: main_id_core_line - 4,
@@ -352,12 +358,13 @@ def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: 
   opts.filter = (id, key) => PopupFilter(id, key, results, search_type,
     search_pattern)
 
+
+  var num_hits = len(getbufline(winbufnr(main_id), 1, "$"))
+  opts.title = $'{base_title} ({num_hits}) '
+
   prompt_text = ""
   prompt_id = popup_create([prompt_sign .. prompt_cursor], opts)
 
-  # Options for main_id, will be set later on
-  # opts.filter = (id, key) => FuzzyFilter(id, key, search_type,
-  #   search_pattern)
 enddef
 
 def ShowPopup(title: string, results: list<string>, search_type: string, search_pattern: string = '')
