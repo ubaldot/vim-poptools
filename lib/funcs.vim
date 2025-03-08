@@ -14,6 +14,10 @@ var main_id = -1
 var prompt_id = -1
 var preview_id = -1
 
+var prompt_cursor = '▏'
+var prompt_sign = '> '
+var prompt_text = ''
+
 # Hide cursor when operating in the popups
 var gui_cursor = []
 
@@ -193,7 +197,6 @@ def UpdateFilePreview(search_type: string, search_pattern: string)
     preview_id_opts.title = $' {fnamemodify(filename, ':t')} '
     popup_setoptions(preview_id, preview_id_opts)
   endif
-
 enddef
 
 def ClosePopups()
@@ -209,7 +212,11 @@ def ClosePopups()
   RestoreCursor()
 enddef
 
-def PopupFilter(id: number, key: string, results: list<string>, search_type: string, search_pattern: string): bool
+def PopupFilter(id: number,
+    key: string,
+    results: list<string>,
+    search_type: string,
+    search_pattern: string): bool
 
   if index(['file', 'file_in_path', 'grep'], search_type) != -1
     # Save for last search
@@ -225,40 +232,66 @@ def PopupFilter(id: number, key: string, results: list<string>, search_type: str
   if key == "\<esc>"
     ClosePopups()
     return true
-  elseif key == "\<CR>"
+  elseif key == "\<CR>" || key == "\<c-c>"
     popup_close(main_id, getcurpos(main_id)[1])
   elseif ["\<Right>", "\<PageDown>"]->index(key) > -1
       win_execute(main_id, 'normal! ' .. maxheight .. "\<C-d>")
-      UpdateFilePreview(search_type, search_pattern)
+      if preview_id != -1
+        UpdateFilePreview(search_type, search_pattern)
+      endif
   elseif ["\<Left>", "\<PageUp>"]->index(key) > -1
       win_execute(main_id, 'normal! ' .. maxheight .. "\<C-u>")
-      UpdateFilePreview(search_type, search_pattern)
+      if preview_id != -1
+        UpdateFilePreview(search_type, search_pattern)
+      endif
   elseif key == "\<Home>"
       win_execute(main_id, "normal! gg")
-      UpdateFilePreview(search_type, search_pattern)
+      if preview_id != -1
+        UpdateFilePreview(search_type, search_pattern)
+      endif
   elseif key == "\<End>"
       win_execute(main_id, "normal! G")
-      UpdateFilePreview(search_type, search_pattern)
+      if preview_id != -1
+        UpdateFilePreview(search_type, search_pattern)
+      endif
   elseif ["\<tab>", "\<C-n>", "\<Down>", "\<ScrollWheelDown>"]->index(key) > -1
       var ln = getcurpos(main_id)[1]
       win_execute(main_id, "normal! j")
       if ln == getcurpos(main_id)[1]
           win_execute(main_id, "normal! gg")
       endif
-      UpdateFilePreview(search_type, search_pattern)
+      if preview_id != -1
+        UpdateFilePreview(search_type, search_pattern)
+      endif
   elseif ["\<S-Tab>", "\<C-p>", "\<Up>", "\<ScrollWheelUp>"]->index(key) > -1
       var ln = getcurpos(main_id)[1]
       win_execute(main_id, "normal! k")
       if ln == getcurpos(main_id)[1]
           win_execute(main_id, "normal! G")
       endif
-      UpdateFilePreview(search_type, search_pattern)
-  # TODO: printable character
-  elseif key =~ '\p'
-      echom "TODO!"
-      # prompt_text ..= key
-      # filtered_items = items_dict->matchfuzzypos(prompt_text, {key: "text"})
-  endif
+      if preview_id != -1
+        UpdateFilePreview(search_type, search_pattern)
+      endif
+  # Take a single, printable character
+  elseif key =~ '^\p$' || keytrans(key) ==# "<BS>" || key == "\<c-u>"
+    if key =~ '^\p$'
+      prompt_text ..= key
+    elseif keytrans(key) ==# "<BS>"
+      if len(prompt_text) > 0
+        prompt_text = prompt_text[: -2]
+      endif
+    elseif key == "\<c-u>"
+      prompt_text = ""
+    endif
+
+    popup_settext(prompt_id, $'{prompt_sign}{prompt_text}{prompt_cursor}')
+    var filtered_results_full = []
+    var filtered_results = results
+    if !empty(prompt_text)
+      filtered_results_full = results->matchfuzzypos(prompt_text)
+      filtered_results = filtered_results_full[0]
+    endif
+    popup_settext(main_id, filtered_results)
   else
     # TODO
     # Update results
@@ -318,8 +351,7 @@ def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: 
   opts.filter = (id, key) => PopupFilter(id, key, results, search_type,
     search_pattern)
 
-  var prompt_cursor = '▏'
-  var prompt_sign = '> '
+  prompt_text = ""
   prompt_id = popup_create([prompt_sign .. prompt_cursor], opts)
 
   # Options for main_id, will be set later on
@@ -352,6 +384,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     borderchars: ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
     border: [1, 1, 1, 1],
     maxheight: popup_height,
+    minheight: popup_height,
     minwidth: popup_width,
     maxwidth: popup_width,
     cursorline: 1,
@@ -360,7 +393,6 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     drag: 1,
   }
 
-  # main_id = popup_menu(results, opts)
   main_id = popup_create(results, opts)
 
   # Preview handling
@@ -377,7 +409,6 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     show_preview = get(g:poptools_config, 'preview_grep', true)
   endif
 
-  # show_preview = false
   if show_preview
     # Common opts update
     popup_width = &columns / 3
@@ -385,8 +416,6 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     opts.line = popup_height - popup_height / 2
     opts.minwidth = popup_width
     opts.maxwidth = popup_width
-    opts.minheight = &lines / 2
-    opts.maxheight = &lines / 2
 
     # Opts for preview_id
     opts.col = popup_width + popup_width / 2 + 1
