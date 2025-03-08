@@ -10,12 +10,15 @@ var last_title = ''
 var last_search_type = ''
 var last_search_pattern = ''
 
+var main_id = -1
+var preview_id = -1
+
 def Echoerr(msg: string)
   echohl ErrorMsg | echom $"{msg}" | echohl None
 enddef
 
 # ----- Callback functions
-def PopupCallbackGrep(id: number, preview_id: number, idx: number)
+def PopupCallbackGrep(id: number, idx: number)
   if idx > 0
     if preview_id != -1
       popup_close(preview_id)
@@ -43,7 +46,7 @@ def PopupCallbackGrep(id: number, preview_id: number, idx: number)
   endif
 enddef
 
-def PopupCallbackFileBuffer(id: number, preview_id: number, idx: number)
+def PopupCallbackFileBuffer(id: number, idx: number)
   if idx > 0
     if preview_id != -1
       popup_close(preview_id)
@@ -55,7 +58,7 @@ def PopupCallbackFileBuffer(id: number, preview_id: number, idx: number)
   endif
 enddef
 
-def PopupCallbackHistory(id: number, preview_id: number, idx: number)
+def PopupCallbackHistory(id: number, idx: number)
   if idx > 0
     if preview_id != -1
       popup_close(preview_id)
@@ -92,7 +95,7 @@ enddef
 #
 # For the syntax highlight, you may use the 'GetFiletypeByFilename()' function
 #
-def UpdateFilePreview(main_id: number, preview_id: number, search_type: string, search_pattern: string)
+def UpdateFilePreview(search_type: string, search_pattern: string)
   # Parse the highlighted line on the main popup
   var idx = line('.', main_id)
 
@@ -173,7 +176,7 @@ def UpdateFilePreview(main_id: number, preview_id: number, search_type: string, 
 
 enddef
 
-def ClosePopups(main_id: number, preview_id: number)
+def ClosePopups()
   if preview_id != -1
     popup_close(preview_id)
   endif
@@ -184,7 +187,7 @@ def ClosePopups(main_id: number, preview_id: number)
   popup_close(main_id)
 enddef
 
-def PopupFilter(main_id: number, preview_id: number, key: string, search_type: string, search_pattern: string): bool
+def PopupFilter(id: number, key: string, search_type: string, search_pattern: string): bool
 
   if index(['file', 'file_in_path', 'grep'], search_type) != -1
     # Save for last search
@@ -196,16 +199,16 @@ def PopupFilter(main_id: number, preview_id: number, key: string, search_type: s
 
   # Handle shortcuts
   if key == "\<esc>"
-    ClosePopups(main_id, preview_id)
+    ClosePopups()
     return true
   else
     popup_filter_menu(main_id, key)
-    UpdateFilePreview(main_id, preview_id, search_type, search_pattern)
+    UpdateFilePreview(search_type, search_pattern)
     return true
   endif
 enddef
 
-def ShowColorscheme(main_id: number, current_background: string)
+def ShowColorscheme(current_background: string)
   # Circular selection
   var idx = line('.', main_id) % (line('$', main_id) + 1)
   # I need this check because when user makes a selection with <cr> this
@@ -218,14 +221,14 @@ def ShowColorscheme(main_id: number, current_background: string)
   endif
 enddef
 
-def PopupFilterColor(main_id: number, key: string, current_colorscheme: string, current_background: string): bool
+def PopupFilterColor(id: number, key: string, current_colorscheme: string, current_background: string): bool
   if key == "\<esc>"
-    ClosePopups(main_id, -1)
+    ClosePopups()
     exe $'colorscheme {current_colorscheme}'
     return true
   else
     popup_filter_menu(main_id, key)
-    ShowColorscheme(main_id, current_background)
+    ShowColorscheme(current_background)
     return true
   endif
 enddef
@@ -241,6 +244,9 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   var current_colorscheme = execute('colorscheme')->substitute('\n', '', 'g')
   var current_background = &background
   hi link PopupSelected PmenuSel
+
+  main_id = -1
+  preview_id = -1
 
   # Standard options
   var opts = {
@@ -259,11 +265,11 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     drag: 1
   }
 
-  var main_id = popup_menu(results, opts)
-  # var main_id = popup_create(results, opts)
+  main_id = popup_menu(results, opts)
+  # main_id = popup_create(results, opts)!
+  redraw!
 
   # Preview handling
-  var preview_id = -1
   var show_preview = false
   if search_type == 'file'
     show_preview = get(g:poptools_config, 'preview_file', true)
@@ -294,7 +300,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
           \ Run :call popup_clear() to close.", opts)
 
     # Options for main_id, will be set later on
-    opts.filter = (id, key) => PopupFilter(id, preview_id, key, search_type,
+    opts.filter = (id, key) => PopupFilter(id, key, search_type,
       search_pattern)
 
     # TODO Study how popus are sized and positioned on screen
@@ -302,7 +308,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     var scrollbar_contrib = len(results) > opts.minheight ? 1 : 0
     opts.col = popup_width - popup_width / 2 - 2 - scrollbar_contrib
 
-    UpdateFilePreview(main_id, preview_id, search_type, search_pattern)
+    UpdateFilePreview(search_type, search_pattern)
   endif
 
   if search_type == 'color'
@@ -316,13 +322,13 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   var PopupCallback: func
   if index(['file', 'file_in_path', 'recent_files', 'buffer'],
         \ search_type) != -1
-    PopupCallback = (id, idx) => PopupCallbackFileBuffer(id, preview_id, idx)
+    PopupCallback = (id, idx) => PopupCallbackFileBuffer(id, idx)
   elseif search_type == 'dir'
     PopupCallback = PopupCallbackDir
   elseif search_type == 'history'
-    PopupCallback = (id, idx) => PopupCallbackHistory(id, preview_id, idx)
+    PopupCallback = (id, idx) => PopupCallbackHistory(id, idx)
   elseif search_type == 'grep'
-    PopupCallback = (id, idx) => PopupCallbackGrep(id, preview_id, idx)
+    PopupCallback = (id, idx) => PopupCallbackGrep(id, idx)
   elseif search_type == 'color'
     PopupCallback = PopupCallbackColorscheme
   endif
@@ -330,7 +336,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   opts.callback = PopupCallback
   popup_setoptions(main_id, opts)
 
-  FuzzyFilter(main_id, preview_id)
+  FuzzyFilter()
 enddef
 
 # ---- API. The following functions are associated to commands in the plugin
