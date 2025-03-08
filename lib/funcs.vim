@@ -2,7 +2,7 @@ vim9script
 
 # TODO Exclude 'wildignore' paths in Grep (it uses an external program)
 # TODO Study how can you make popup_width and popup_height them parametric
-var popup_width = &columns / 2
+var popup_width = 2 / 3 * &columns
 var popup_height = &lines / 2
 
 var last_results = []
@@ -11,6 +11,7 @@ var last_search_type = ''
 var last_search_pattern = ''
 
 var main_id = -1
+var prompt_id = -1
 var preview_id = -1
 
 def Echoerr(msg: string)
@@ -185,6 +186,7 @@ def ClosePopups()
   opts.callback = ''
   popup_setoptions(main_id, opts)
   popup_close(main_id)
+  popup_close(prompt_id)
 enddef
 
 def PopupFilter(id: number, key: string, search_type: string, search_pattern: string): bool
@@ -234,8 +236,29 @@ def PopupFilterColor(id: number, key: string, current_colorscheme: string, curre
 enddef
 #
 # -------- MAIN
-def FuzzyFilter()
-  echo "FOO"
+def ShowPromptPopup(search_type: string, search_pattern: string)
+  var main_id_core_line = popup_getpos(main_id).core_line
+  var main_id_core_col = popup_getpos(main_id).core_col
+  # echom popup_getpos(main_id)
+
+  var opts = {
+    title: ' Search: ',
+    minwidth: 2 * popup_width + 4,
+    maxwidth: 2 * popup_width + 4,
+    line: main_id_core_line - 4,
+    col: main_id_core_col - 1,
+    borderchars: ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
+    border: [1, 1, 1, 1],
+    mapping: 0,
+    wrap: 0,
+    drag: 1,
+  }
+
+  prompt_id = popup_create(['> '], opts)
+
+  # Options for main_id, will be set later on
+  # opts.filter = (id, key) => FuzzyFilter(id, key, search_type,
+  #   search_pattern)
 enddef
 
 def ShowPopup(title: string, results: list<string>, search_type: string, search_pattern: string = '')
@@ -245,15 +268,14 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   var current_background = &background
   hi link PopupSelected PmenuSel
 
+  # Set script-local variables
   main_id = -1
   preview_id = -1
 
   # Standard options
   var opts = {
     title: title,
-    line: &lines,
-    col: &columns,
-    posinvert: false,
+    pos: 'center',
     borderchars: ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
     border: [1, 1, 1, 1],
     maxheight: popup_height,
@@ -262,12 +284,15 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     cursorline: 1,
     mapping: 0,
     wrap: 0,
-    drag: 1
+    drag: 1,
   }
 
-  main_id = popup_menu(results, opts)
-  # main_id = popup_create(results, opts)!
-  redraw!
+  # Options for main_id, will be set later on
+  opts.filter = (id, key) => PopupFilter(id, key, search_type,
+    search_pattern)
+
+  # main_id = popup_menu(results, opts)
+  main_id = popup_create(results, opts)
 
   # Preview handling
   var show_preview = false
@@ -295,13 +320,10 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     opts.maxheight = &lines / 2
 
     # Opts for preview_id
-    opts.col = popup_width + popup_width / 2 + 2
-    preview_id = popup_create("Something went wrong.
-          \ Run :call popup_clear() to close.", opts)
+    opts.col = popup_width + popup_width / 2 + 1
+    preview_id = popup_create("Something went wrong."
+          .. "Run :call popup_clear() to close.", opts)
 
-    # Options for main_id, will be set later on
-    opts.filter = (id, key) => PopupFilter(id, key, search_type,
-      search_pattern)
 
     # TODO Study how popus are sized and positioned on screen
     # If too many results, the scrollbar overlap the preview popup
@@ -336,7 +358,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   opts.callback = PopupCallback
   popup_setoptions(main_id, opts)
 
-  FuzzyFilter()
+  ShowPromptPopup(search_type, search_pattern)
 enddef
 
 # ---- API. The following functions are associated to commands in the plugin
