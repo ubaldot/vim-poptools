@@ -320,15 +320,42 @@ def ShowColorscheme(current_background: string)
 enddef
 
 def PopupFilterColor(id: number, key: string, current_colorscheme: string, current_background: string): bool
+
+  var maxheight = popup_getoptions(main_id).maxheight
   if key == "\<esc>"
     ClosePopups()
     exe $'colorscheme {current_colorscheme}'
     return true
-  else
-    popup_filter_menu(main_id, key)
+  elseif ["\<Right>", "\<PageDown>"]->index(key) > -1
+    win_execute(main_id, 'normal! ' .. maxheight .. "\<C-d>")
     ShowColorscheme(current_background)
-    return true
+  elseif ["\<Left>", "\<PageUp>"]->index(key) > -1
+    win_execute(main_id, 'normal! ' .. maxheight .. "\<C-u>")
+    ShowColorscheme(current_background)
+  elseif key == "\<Home>"
+    win_execute(main_id, "normal! gg")
+    ShowColorscheme(current_background)
+  elseif key == "\<End>"
+    win_execute(main_id, "normal! G")
+    ShowColorscheme(current_background)
+  elseif ["\<tab>", "\<C-n>", "\<Down>", "\<ScrollWheelDown>"]->index(key) > -1
+    var ln = getcurpos(main_id)[1]
+    win_execute(main_id, "normal! j")
+    if ln == getcurpos(main_id)[1]
+        win_execute(main_id, "normal! gg")
+    endif
+    ShowColorscheme(current_background)
+  elseif ["\<S-Tab>", "\<C-p>", "\<Up>", "\<ScrollWheelUp>"]->index(key) > -1
+    var ln = getcurpos(main_id)[1]
+    win_execute(main_id, "normal! k")
+    if ln == getcurpos(main_id)[1]
+        win_execute(main_id, "normal! G")
+    endif
+    ShowColorscheme(current_background)
+  else
+    # TODO
   endif
+    return true
 enddef
 #
 # -------- MAIN
@@ -355,8 +382,15 @@ def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: 
   }
 
   # Filter
-  opts.filter = (id, key) => PopupFilter(id, key, results, search_type,
-    search_pattern)
+  if search_type == 'color'
+    var current_colorscheme = execute('colorscheme')->substitute('\n', '', 'g')
+    var current_background = &background
+    opts.filter = (id, key) => PopupFilterColor(id, key, current_colorscheme,
+      current_background)
+  else
+    opts.filter = (id, key) => PopupFilter(id, key, results, search_type,
+      search_pattern)
+  endif
 
 
   var num_hits = len(getbufline(winbufnr(main_id), 1, "$"))
