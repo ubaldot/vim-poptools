@@ -231,6 +231,10 @@ def PopupFilterColor(main_id: number, key: string, current_colorscheme: string, 
 enddef
 #
 # -------- MAIN
+def FuzzyFilter()
+  echo "FOO"
+enddef
+
 def ShowPopup(title: string, results: list<string>, search_type: string, search_pattern: string = '')
 
   # TODO: why you have the ^@ at the beginning of execute('colorscheme') ???
@@ -326,6 +330,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   opts.callback = PopupCallback
   popup_setoptions(main_id, opts)
 
+  FuzzyFilter(main_id, preview_id)
 enddef
 
 # ---- API. The following functions are associated to commands in the plugin
