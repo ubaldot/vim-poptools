@@ -331,8 +331,8 @@ def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: 
   var main_id_core_col = popup_getpos(main_id).core_col
   # echom popup_getpos(main_id)
   var prompt_width = preview_id == -1
-  ? popup_width + 1
-  : 2 * popup_width + 4
+  ? popup_width
+  : 2 * popup_width + 2
 
   var opts = {
     title: ' Filter: ',
@@ -343,6 +343,7 @@ def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: 
     borderchars: ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
     border: [1, 1, 1, 1],
     mapping: 0,
+    scrollbar: 0,
     wrap: 0,
     drag: 1,
   }
@@ -387,6 +388,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     minheight: popup_height,
     minwidth: popup_width,
     maxwidth: popup_width,
+    scrollbar: 0,
     cursorline: 1,
     mapping: 0,
     wrap: 0,
@@ -411,7 +413,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
 
   if show_preview
     # Common opts update
-    popup_width = &columns / 3
+    popup_width = &columns / 3 + 1
     opts.pos = 'topleft'
     opts.line = popup_height - popup_height / 2
     opts.minwidth = popup_width
@@ -425,8 +427,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
 
     # TODO Study how popus are sized and positioned on screen
     # If too many results, the scrollbar overlap the preview popup
-    var scrollbar_contrib = len(results) > opts.minheight ? 1 : 0
-    opts.col = popup_width - popup_width / 2 - 2 - scrollbar_contrib
+    opts.col = popup_width - popup_width / 2 - 2
 
     UpdateFilePreview(search_type, search_pattern)
   endif
