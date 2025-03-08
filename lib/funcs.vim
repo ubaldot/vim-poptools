@@ -322,13 +322,13 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   var PopupCallback: func
   if index(['file', 'file_in_path', 'recent_files', 'buffer'],
         \ search_type) != -1
-    PopupCallback = (id, idx) => PopupCallbackFileBuffer(id, idx)
+    PopupCallback = PopupCallbackFileBuffer
   elseif search_type == 'dir'
     PopupCallback = PopupCallbackDir
   elseif search_type == 'history'
-    PopupCallback = (id, idx) => PopupCallbackHistory(id, idx)
+    PopupCallback = PopupCallbackHistory
   elseif search_type == 'grep'
-    PopupCallback = (id, idx) => PopupCallbackGrep(id, idx)
+    PopupCallback = PopupCallbackGrep
   elseif search_type == 'color'
     PopupCallback = PopupCallbackColorscheme
   endif
