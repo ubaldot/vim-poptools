@@ -383,11 +383,10 @@ def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: 
   var opts = {
     minwidth: prompt_width,
     maxwidth: prompt_width,
-    # minheight: 2,
-    line: main_id_core_line - 3,
+    line: main_id_core_line - 4,
     col: main_id_core_col - 1,
-    borderchars: ['─', '│', '─', '│', '┌', '┐', '┘', '└'],
-    border: [1, 1, 0, 1],
+    borderchars: ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
+    border: [1, 1, 1, 1],
     mapping: 0,
     scrollbar: 0,
     wrap: 0,
@@ -428,8 +427,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   var opts = {
     title: title,
     pos: 'center',
-    # borderchars: ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
-    borderchars: ['─', '│', '─', '│', '├', '┤', '┘', '└'],
+    borderchars: ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
     border: [1, 1, 1, 1],
     maxheight: popup_height,
     minheight: popup_height,
@@ -467,14 +465,10 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     opts.maxwidth = popup_width
 
     # Opts for preview_id
-    opts.col = popup_width + popup_width / 2 + 1
-    # opts.borderchars = ['─', '│', '─', '│', '┬', '┐', '┘', '└']
-    opts.borderchars = ['─', '│', '─', '│', '┌', '┤', '┘', '└']
+    opts.col = popup_width + popup_width / 2
     preview_id = popup_create("Something went wrong."
           .. "Run :call popup_clear() to close.", opts)
 
-    # Opt for main_id
-    opts.borderchars = ['─', '│', '─', '│', '├', '┐', '┘', '└']
     opts.col = popup_width - popup_width / 2 - 2
 
     UpdateFilePreview(search_type, search_pattern)
