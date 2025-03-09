@@ -74,9 +74,6 @@ g:poptools_config['preview_grep'] = true
 g:poptools_config['preview_recent_files'] = false,
 ```
 
-To see the whole list of keys allowed in the `g:poptools_config` dictionary,
-take a look at `:h poptools.txt`.
-
 ### Syntax highlight in the preview window
 
 Syntax highlight in the preview can be handy, but it may slow down the user
@@ -99,6 +96,8 @@ g:poptools_config['preview_syntax'] = false
 g:poptools_config['preview_recent_files'] = false
 g:poptools_config['fuzzy_search'] = false
 ```
+To see the whole list of keys allowed in the `g:poptools_config` dictionary,
+take a look at `:h poptools.txt`.
 
 ## Some notes on files/patterns search
 
