@@ -21,7 +21,6 @@ var prompt_text: string
 # Hide cursor when operating in the popups
 var gui_cursor: list<dict<any>>
 
-
 def Echoerr(msg: string)
   echohl ErrorMsg | echom $"[poptools] {msg}" | echohl None
 enddef
@@ -31,8 +30,9 @@ def Echowarn(msg: string)
 enddef
 
 def InitScriptLocalVars()
-  popup_width = -1
-  popup_height = -1
+  # Set script-local variables
+  popup_width = eval('&columns / 3') * 2
+  popup_height = &lines / 2
 
   main_id = -1
   prompt_id = -1
@@ -42,10 +42,11 @@ def InitScriptLocalVars()
   prompt_sign = '> '
   prompt_text = ''
 
-  prop_type_add('PopupToolsMatched', {highlight: 'WarningMsg'})
+  if empty(prop_type_get('PopupToolsMatched'))
+      prop_type_add('PopupToolsMatched', {highlight: 'WarningMsg'})
+  endif
 enddef
 
-# TODO: If the <c-c> problem is not solved, don't try to hide the cursor
 def RestoreCursor()
     set t_ve&
     if hlget("Cursor")[0]->get('cleared', false)
@@ -104,9 +105,8 @@ def PopupCallbackHistory(id: number, idx: number)
       popup_close(preview_id, -1)
     endif
     var cmd = getbufline(winbufnr(main_id), idx)[0]
-    exe cmd
+    feedkeys(cmd)
     RestoreCursor()
-
   endif
 enddef
 
@@ -130,19 +130,18 @@ def PopupCallbackColorscheme(id: number, idx: number)
   endif
 enddef
 
-# ------- Filter functions
-# You  may use external programs to count the lines if 'readfile()' is too
-# slow, e.g.
-# var file_length = has('win32') ? str2nr(system('...')) : str2nr(system($'wc
-# -l {filename}')->matchstr('\s*\zs\d*'))
-# var buf_lines = has('win32')
-#   ? systemlist($'powershell -c "Get-Content {filename} | Select-Object -Skip
-#   ({firstline} - 1) -First ({lastline} - {firstline} + 1)"')
-#   : systemlist($'sed -n "{firstline},{lastline}p" {filename}')
-#
-# For the syntax highlight, you may use the 'GetFiletypeByFilename()' function
-#
 def UpdateFilePreview(search_type: string, search_pattern: string)
+  # You  may use external programs to count the lines if 'readfile()' is too
+  # slow, e.g.
+  # var file_length = has('win32') ? str2nr(system('...')) : str2nr(system($'wc
+  # -l {filename}')->matchstr('\s*\zs\d*'))
+  # var buf_lines = has('win32')
+  #   ? systemlist($'powershell -c "Get-Content {filename} | Select-Object -Skip
+  #   ({firstline} - 1) -First ({lastline} - {firstline} + 1)"')
+  #   : systemlist($'sed -n "{firstline},{lastline}p" {filename}')
+  #
+  # For the syntax highlight, you may use the 'GetFiletypeByFilename()' function
+  #
   # Parse the highlighted line on the main popup
   var idx = line('.', main_id)
 
@@ -200,9 +199,9 @@ def UpdateFilePreview(search_type: string, search_pattern: string)
     # bulletproof
     if get(g:poptools_config, 'preview_syntax', true)
       # set 'synmaxcol' for avoiding crashing if some readable file has
-      # embedded
-      # figures. Figure generate lines with >80000 columns and the internal
-      # engine to figure out the syntax will fail.
+      # embedded figures.
+      # Figure generate lines with >80000 columns and the internal engine
+      # to figure out the syntax will fail.
       var old_synmaxcol = &synmaxcol
       &synmaxcol = 300
       var buf_extension = $'{fnamemodify(filename, ":e")}'
@@ -222,15 +221,11 @@ def UpdateFilePreview(search_type: string, search_pattern: string)
   endif
 enddef
 
-def ClosePopups()
+export def ClosePopups()
   # This function tear down everything
   if preview_id != -1
     popup_close(preview_id, -1)
   endif
-  # Remove the callback because popup_close() triggers the callback anyway.
-  var opts = popup_getoptions(main_id)
-  opts.callback = ''
-  popup_setoptions(main_id, opts)
   popup_close(main_id, -1)
   popup_close(prompt_id, -1)
   RestoreCursor()
@@ -316,6 +311,7 @@ def PopupFilter(id: number,
     #   },
     #   ...
     # ]
+    #
     var filtered_results_full = []
     var filtered_results: list<dict<any>>
     if !empty(prompt_text)
@@ -362,6 +358,7 @@ enddef
 def ShowColorscheme(current_background: string)
   # Circular selection
   var idx = line('.', main_id) % (line('$', main_id) + 1)
+  # TODO: check
   # I need this check because when user makes a selection with <cr> this
   # function is called anyways and idx will be 0
   if idx > 0
@@ -373,6 +370,8 @@ def ShowColorscheme(current_background: string)
 enddef
 
 def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: string)
+  # This is the UI thing
+  #
   var main_id_core_line = popup_getpos(main_id).core_line
   var main_id_core_col = popup_getpos(main_id).core_col
 
@@ -411,23 +410,19 @@ enddef
 
 # ----- MAIN -----
 def ShowPopup(title: string, results: list<string>, search_type: string, search_pattern: string = '')
+  # This function is regarded as main function.
   InitScriptLocalVars()
 
-  # For some reason you get ^@
+  # For some reason you get ^@ (=newline)
   var current_colorscheme = execute('colorscheme')->substitute('\n', '', 'g')
   var current_background = &background
   hi link PopupSelected PmenuSel
 
   # hide cursor
-  # set t_ve=
-  # gui_cursor = hlget("Cursor")
-  # hlset([{name: 'Cursor', cleared: true}])
+  set t_ve=
+  gui_cursor = hlget("Cursor")
+  hlset([{name: 'Cursor', cleared: true}])
 
-  # Set script-local variables
-  popup_width = eval('&columns / 3') * 2
-  popup_height = &lines / 2
-  main_id = -1
-  preview_id = -1
 
   # Standard options
   var opts = {
@@ -475,7 +470,6 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     preview_id = popup_create("Something went wrong."
           .. "Run :call popup_clear() to close.", opts)
 
-
     opts.col = popup_width - popup_width / 2 - 2
 
     UpdateFilePreview(search_type, search_pattern)
@@ -507,8 +501,10 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   ShowPromptPopup(results, search_type, search_pattern)
 enddef
 
-# ---- API. The following functions are associated to commands in the plugin
-#  file.
+# ---- API ------------
+# The following functions are associated to commands in the plugin file.
+# They are used to generate the 'result' and call ShowPopup()
+#
 export def FindFile(search_type: string)
   # Guard
   if (search_type == 'file' || search_type == 'file_in_path')
@@ -640,7 +636,6 @@ enddef
 
 export def GrepInBuffer(what_user: string = '')
   # The format is like grep, i.e. filename:linenumber:
-  # Main
   var what = ''
   if empty(what_user)
     GrepInBufferHighlight()
