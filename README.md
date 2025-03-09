@@ -13,9 +13,8 @@ Exploit popups as much as you can!
 This plugin aims to scale your productivity by conveniently using popups for a
 multitude of tasks, from finding files and directories, to setting your
 favorite colorscheme.
-
 Once a list of results is slammed into a popup menu, you can filter it in an
-exact or fuzzy way. This is useful when you get a long list of matches.
+exact or fuzzy way.
 
 This plugin is more essential compared to similar plugins such as [fzf][0],
 [fuzzyy][1] or [scope][2] and differently from them, external programs are
@@ -27,8 +26,8 @@ search very handy. The configuration is also fairly straightforward.
 
 ### Commands
 
-At the moment the following is what you can search and show in popups. I guess
-the commands are self-explanatory:
+The following is what you can search and show in popups.
+The commands are self-explanatory:
 
 ```
 :PoptoolsFindFile
@@ -55,10 +54,9 @@ nnoremap <c-p>o <cmd>PoptoolsRecentFiles<cr>
 ```
 ## Configuration
 
-If you don't like the default behavior, there is room for some customization
-that I wanted to keep very easy. All you have to do is to set some entries in
-the `g:poptools_config` dictionary. To do that, be sure to create first an
-empty dictionary in your `.vimrc` file, i.e. `g:poptools_config = {}`.
+If you don't like the default behavior, there is room for some customization.
+The process is very easy. All you have to do is to set some entries in
+the `g:poptools_config` dictionary.
 
 However, keep in mind that you may also change the plugin behavior by through
 Vim the options `:h 'wildignore'`, `:h 'wildoptions'` and `:h 'path'`.
@@ -70,6 +68,7 @@ when you _grep_ but not when you open recent files. If that is the case, do as
 it follows
 
 ```
+g:poptools_config = {}
 g:poptools_config['preview_grep'] = true
 g:poptools_config['preview_recent_files'] = false,
 ```
