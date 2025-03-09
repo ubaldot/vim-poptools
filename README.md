@@ -76,8 +76,8 @@ g:poptools_config['preview_recent_files'] = false,
 
 ### Syntax highlight in the preview window
 
-Syntax highlight in the preview can be handy, but it may slow down the user
-experience. You can avoid using syntax highlight in the preview window by
+Syntax highlight in the preview window can be handy, but it may slow down the
+user experience. You can avoid using syntax highlight in the preview window by
 setting `g:poptools_config['preview_syntax'] = false`. This is useful in case
 you are encountering troubles when using the preview window. The match are
 still highlighted.
@@ -91,7 +91,7 @@ by setting `g:poptools_config['fuzzy_search']` to `true` or to `false`.
 It follows an example of configuration:
 
 ```
-g:poptools_config = {}`
+g:poptools_config = {}
 g:poptools_config['preview_syntax'] = false
 g:poptools_config['preview_recent_files'] = false
 g:poptools_config['fuzzy_search'] = false
