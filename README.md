@@ -53,8 +53,58 @@ nnoremap <c-p>l <cmd>PoptoolsLastSearch<cr>
 nnoremap <c-tab> <cmd>PoptoolsBuffers<cr>
 nnoremap <c-p>o <cmd>PoptoolsRecentFiles<cr>
 ```
+## Configuration
 
-## File search
+If you don't like the default behavior, there is room for some customization
+that I wanted to keep very easy. All you have to do is to set some entries in
+the `g:poptools_config` dictionary. To do that, be sure to create first an
+empty dictionary in your `.vimrc` file, i.e. `g:poptools_config = {}`.
+
+However, keep in mind that you may also change the plugin behavior by through
+Vim the options `:h 'wildignore'`, `:h 'wildoptions'` and `:h 'path'`.
+
+### Preview window
+
+You may not want the preview window in every case. For example, you want it
+when you _grep_ but not when you open recent files. You can specify when you
+want the following keys:
+
+```
+ 'preview_file',
+ 'preview_file_in_path',
+ 'preview_recent_files',
+ 'preview_buffer',
+ 'preview_grep'.
+```
+
+You can for example specify
+`g:poptools_config['preview_grep'] = true, g:poptools_config['preview_recent_files'] = false,`
+to have a preview window in your grep result list, but not in the recent files
+list.
+
+Syntax highlight in the preview can be handy, but it may slow down the user
+experience. You can avoid using syntax highlight in the preview window by
+setting `g:poptools_config['preview_syntax'] = false`. This is useful in case
+you are encountering troubles when using the preview window. The match are
+still highlighted.
+
+All the boolean values in the `g:poptools_config` are set to `true` as
+default.
+
+It follows an example of configuration:
+
+```
+g:poptools_config = {}`
+g:poptools_config['preview_syntax'] = false
+g:poptools_config['preview_recent_files'] = false
+```
+
+### To fuzzy or not to fuzzy?
+
+You can filter the results either in a fuzzy or exact fashion. You choose it
+by setting `g:poptools_config['fuzzy_search']` to `true` or to `false`.
+
+## Some notes on file search
 
 `PoptoolsFindFile` and `PoptoolsFindInPath`
 
@@ -100,51 +150,6 @@ To find hidden folders with `PopupFindDir` command, just add a `.` in front of
 the search pattern, e.g. `.git*`. That will return e.g. `.git/, .github/`,
 etc.
 
-## Configuration
-
-If you don't like the default behavior, there is room for some customization.
-You can do it through Vim the options `:h 'wildignore'`, `:h 'wildoptions'`
-and `:h 'path'` and/or through the `g:poptools_config` dictionary that you can
-set as it follows.
-
-To do that, be sure to create an empty dictionary in your `.vimrc` file, i.e.
-`g:poptools_config = {}`.
-
-### Preview window
-
-You may not want the preview window in every case. For example, you want it
-when you _grep_ but not when you open recent files. You can specify when you
-want the following keys:
-
-```
- 'preview_file',
- 'preview_file_in_path',
- 'preview_recent_files',
- 'preview_buffer',
- 'preview_grep'.
-```
-
-You can for example specify
-`g:poptools_config['preview_grep'] = true, g:poptools_config['preview_recent_files'] = false,`
-to have a preview window in your grep result list, but not in the recent files
-list.
-
-Syntax highlight in the preview can be handy, but it may slow down the user
-experience. You can avoid using syntax highlight in the preview window by
-setting `g:poptools_config['preview_syntax'] = false`. This is useful in case
-you are encountering troubles when using the preview window. The match are
-still highlighted.
-
-All the boolean values in the `g:poptools_config` are set to `true` as
-default.
-
-It follows an example of configuration:
-
-```
-g:poptools_config = {}`
-g:poptools_config['preview_syntax'] = false
-g:poptools_config['preview_recent_files'] = false
-```
 
 [0]: https://github.com/junegunn/fzf.vim
 [1]: https://github.com/Donaldttt/fuzzyy
