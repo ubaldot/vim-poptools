@@ -43,6 +43,8 @@ def InitScriptLocalVars()
   prompt_cursor = '▏'
   prompt_sign = '> '
   prompt_text = ''
+
+  saved_c_c = maparg('<C-c>', 'n', false, true)
 enddef
 
 def RestoreCursor()
@@ -105,6 +107,7 @@ def PopupCallbackHistory(id: number, idx: number)
     var cmd = getbufline(winbufnr(main_id), idx)[0]
     exe cmd
     RestoreCursor()
+
   endif
 enddef
 
@@ -115,6 +118,7 @@ def PopupCallbackDir(id: number, idx: number)
     pwd
     popup_close(prompt_id, -1)
     RestoreCursor()
+
   endif
 enddef
 
@@ -231,9 +235,6 @@ def ClosePopups()
   popup_close(main_id, -1)
   popup_close(prompt_id, -1)
   RestoreCursor()
-  main_id = -1
-  prompt_id = -1
-  preview_id = -1
 enddef
 
 def PopupFilter(id: number,
@@ -255,8 +256,7 @@ def PopupFilter(id: number,
 
   var maxheight = popup_getoptions(main_id).maxheight
 
-  # Handle keys
-  if key == "\<esc>"
+  if key == "\<esc>" || key == "\<C-c>"
     if search_type == 'color'
       exe $'colorscheme {current_colorscheme}'
     endif
@@ -266,7 +266,7 @@ def PopupFilter(id: number,
 
   # You never know what the user can type...
   try
-    if key == "\<CR>" || key == "\<c-c>"
+    if key == "\<CR>"
       popup_close(main_id, getcurpos(main_id)[1])
     elseif ["\<Right>", "\<PageDown>"]->index(key) > -1
         win_execute(main_id, 'normal! ' .. maxheight .. "\<C-d>")
@@ -347,12 +347,10 @@ def ShowColorscheme(current_background: string)
   endif
 enddef
 
-#
-# -------- MAIN
 def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: string)
   var main_id_core_line = popup_getpos(main_id).core_line
   var main_id_core_col = popup_getpos(main_id).core_col
-  # echom popup_getpos(main_id)
+
   var prompt_width = preview_id == -1
   ? popup_width
   : 2 * popup_width + 2
@@ -386,6 +384,7 @@ def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: 
 
 enddef
 
+# ----- MAIN -----
 def ShowPopup(title: string, results: list<string>, search_type: string, search_pattern: string = '')
   InitScriptLocalVars()
 
