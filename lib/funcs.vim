@@ -464,8 +464,8 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     opts.minwidth = popup_width
     opts.maxwidth = popup_width
 
-    # Opts for preview_id
-    opts.col = popup_width + popup_width / 2
+    # TODO Opts for preview_id :Fix +1/+0 (should be fixed with the modulo)
+    opts.col = popup_width + popup_width / 2 + popup_width % 2
     preview_id = popup_create("Something went wrong."
           .. "Run :call popup_clear() to close.", opts)
 
