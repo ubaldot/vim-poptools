@@ -328,7 +328,6 @@ def PopupFilter(id: number,
     endif
 
     var opts = popup_getoptions(prompt_id)
-    echom opts
     var num_hits = !empty(filtered_results)
       ? len(filtered_results)
       : len(results)
@@ -531,8 +530,8 @@ export def FindFile(search_type: string)
         \  search_type, true)
 
   redraw
-  echo "If the search takes too long hit CTRL-C few times and try to
-        \ narrow down your search."
+  # echo "If the search takes too long hit CTRL-C few times and try to
+  #       \ narrow down your search."
   if empty(results)
     echo $"'{what}' pattern not found!"
   else
