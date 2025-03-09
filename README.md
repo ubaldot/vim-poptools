@@ -14,10 +14,13 @@ This plugin aims to scale your productivity by conveniently using popups for a
 multitude of tasks, from finding files and directories, to setting your
 favorite colorscheme.
 
-It is more essential compared to similar plugins such as [fzf][0], [fuzzyy][1]
-or [scope][2]. Under some circumstances it may be slower, but I don't mind
-waiting a bit when the search process takes a while; it helps me pause and
-reflect on what I am doing, giving my brain some breathing room.
+Once a list of results is slammed into a popup menu, you can easily fuzzy
+filter is. This is useful when you get a long list of matches, which is
+typical in the case of recently opened files or of command history.
+
+This plugin is more essential compared to similar plugins such as [fzf][0],
+[fuzzyy][1] or [scope][2] and differently from them, external programs are
+called _synchronously_, but things may change in the future. :)
 
 Nevertheless, I personally like the interface and how it displays all the
 results at once. Additionally, I find the opportunity of saving the last
@@ -35,6 +38,7 @@ the commands are self-explanatory:
 :PoptoolsBuffers
 :PoptoolsRecentFiles
 :PoptoolsCmdHistory
+:PoptoolsKill # When something goes wrong, you can clear all the Poptools popups
 :PoptoolsColorscheme # The displayed colors depends on the value of :h 'background'
 :PoptoolsGrepInBuffer # Find pattern in the current buffer
 :PoptoolsGrep # External grep. Grep command is displayed.
@@ -46,14 +50,9 @@ the commands are self-explanatory:
 
 ```
 nnoremap <c-p> <cmd>PoptoolsFindFile<cr><cr>
-nnoremap <c-p>f <cmd>PoptoolsFindFile<cr>
 nnoremap <c-p>l <cmd>PoptoolsLastSearch<cr>
 nnoremap <c-tab> <cmd>PoptoolsBuffers<cr>
-nnoremap <c-p>h <cmd>PoptoolsCmdHistory<cr>
-xnoremap <c-p>h <esc>PoptoolsCmdHistory<cr>
-nnoremap <c-p>d <cmd>PoptoolsFindDir<cr>
 nnoremap <c-p>o <cmd>PoptoolsRecentFiles<cr>
-nnoremap <c-p>g <cmd>PoptoolsGrep<cr>
 ```
 
 ## File search
@@ -84,7 +83,8 @@ by the Vim options settings. The default "grep" commands are the following:
   cmd_nix_default = $'grep -nrH --include="{files}" "{what}" {search_dir}'
 ```
 
-where the values of `{what}`,`{files}` and `{search_dir}` are replaced by user input.
+where the values of `{what}`,`{files}` and `{search_dir}` are replaced by
+user input.
 
 <!-- You can override them by setting `g:poptools_config['cmd_win']` and -->
 <!-- `g:poptools_config['cmd_nix']`, respectively. -->

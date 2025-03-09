@@ -265,21 +265,21 @@ def PopupFilter(id: number,
   if key == "\<CR>"
     popup_close(main_id, getcurpos(main_id)[1])
     ClosePopups()
-  elseif ["\<Right>", "\<PageDown>"]->index(key) > -1
+  elseif index(["\<Right>", "\<PageDown>"], key) != -1
       win_execute(main_id, 'normal! ' .. maxheight .. "\<C-d>")
-  elseif ["\<Left>", "\<PageUp>"]->index(key) > -1
+  elseif index(["\<Left>", "\<PageUp>"], key) != -1
       win_execute(main_id, 'normal! ' .. maxheight .. "\<C-u>")
   elseif key == "\<Home>"
       win_execute(main_id, "normal! gg")
   elseif key == "\<End>"
       win_execute(main_id, "normal! G")
-  elseif ["\<tab>", "\<C-n>", "\<Down>", "\<ScrollWheelDown>"]->index(key) > -1
+  elseif index(["\<tab>", "\<C-n>", "\<Down>", "\<ScrollWheelDown>"], key) != -1
       var ln = getcurpos(main_id)[1]
       win_execute(main_id, "normal! j")
       if ln == getcurpos(main_id)[1]
           win_execute(main_id, "normal! gg")
       endif
-  elseif ["\<S-Tab>", "\<C-p>", "\<Up>", "\<ScrollWheelUp>"]->index(key) > -1
+  elseif index(["\<S-Tab>", "\<C-p>", "\<Up>", "\<ScrollWheelUp>"], key) != -1
       var ln = getcurpos(main_id)[1]
       win_execute(main_id, "normal! k")
       if ln == getcurpos(main_id)[1]
@@ -328,6 +328,7 @@ def PopupFilter(id: number,
     endif
 
     var opts = popup_getoptions(prompt_id)
+    echom opts
     var num_hits = !empty(filtered_results)
       ? len(filtered_results)
       : len(results)
@@ -422,7 +423,6 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   set t_ve=
   gui_cursor = hlget("Cursor")
   hlset([{name: 'Cursor', cleared: true}])
-
 
   # Standard options
   var opts = {
