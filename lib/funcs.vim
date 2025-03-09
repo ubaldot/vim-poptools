@@ -237,73 +237,79 @@ def PopupFilter(id: number,
 
   # Handle keys
   if key == "\<esc>"
-    ClosePopups()
-    if search_pattern == 'color'
+    if search_type == 'color'
       exe $'colorscheme {current_colorscheme}'
     endif
+    ClosePopups()
     return true
   endif
 
-  if key == "\<CR>" || key == "\<c-c>"
-    popup_close(main_id, getcurpos(main_id)[1])
-  elseif ["\<Right>", "\<PageDown>"]->index(key) > -1
-      win_execute(main_id, 'normal! ' .. maxheight .. "\<C-d>")
-  elseif ["\<Left>", "\<PageUp>"]->index(key) > -1
-      win_execute(main_id, 'normal! ' .. maxheight .. "\<C-u>")
-  elseif key == "\<Home>"
-      win_execute(main_id, "normal! gg")
-  elseif key == "\<End>"
-      win_execute(main_id, "normal! G")
-  elseif ["\<tab>", "\<C-n>", "\<Down>", "\<ScrollWheelDown>"]->index(key) > -1
-      var ln = getcurpos(main_id)[1]
-      win_execute(main_id, "normal! j")
-      if ln == getcurpos(main_id)[1]
-          win_execute(main_id, "normal! gg")
+  # You never know what the user can type...
+  try
+    if key == "\<CR>" || key == "\<c-c>"
+      popup_close(main_id, getcurpos(main_id)[1])
+    elseif ["\<Right>", "\<PageDown>"]->index(key) > -1
+        win_execute(main_id, 'normal! ' .. maxheight .. "\<C-d>")
+    elseif ["\<Left>", "\<PageUp>"]->index(key) > -1
+        win_execute(main_id, 'normal! ' .. maxheight .. "\<C-u>")
+    elseif key == "\<Home>"
+        win_execute(main_id, "normal! gg")
+    elseif key == "\<End>"
+        win_execute(main_id, "normal! G")
+    elseif ["\<tab>", "\<C-n>", "\<Down>", "\<ScrollWheelDown>"]->index(key) > -1
+        var ln = getcurpos(main_id)[1]
+        win_execute(main_id, "normal! j")
+        if ln == getcurpos(main_id)[1]
+            win_execute(main_id, "normal! gg")
+        endif
+    elseif ["\<S-Tab>", "\<C-p>", "\<Up>", "\<ScrollWheelUp>"]->index(key) > -1
+        var ln = getcurpos(main_id)[1]
+        win_execute(main_id, "normal! k")
+        if ln == getcurpos(main_id)[1]
+            win_execute(main_id, "normal! G")
+        endif
+    # The real deal: take a single, printable character
+    elseif key =~ '^\p$' || keytrans(key) ==# "<BS>" || key == "\<c-u>"
+      if key =~ '^\p$'
+        prompt_text ..= key
+      elseif keytrans(key) ==# "<BS>"
+        if len(prompt_text) > 0
+          prompt_text = prompt_text[: -2]
+        endif
+      elseif key == "\<c-u>"
+        prompt_text = ""
       endif
-  elseif ["\<S-Tab>", "\<C-p>", "\<Up>", "\<ScrollWheelUp>"]->index(key) > -1
-      var ln = getcurpos(main_id)[1]
-      win_execute(main_id, "normal! k")
-      if ln == getcurpos(main_id)[1]
-          win_execute(main_id, "normal! G")
+
+      popup_settext(prompt_id, $'{prompt_sign}{prompt_text}{prompt_cursor}')
+      var filtered_results_full = []
+      var filtered_results = results
+      if !empty(prompt_text)
+        filtered_results_full = results->matchfuzzypos(prompt_text)
+        filtered_results = filtered_results_full[0]
       endif
-  # Take a single, printable character
-  elseif key =~ '^\p$' || keytrans(key) ==# "<BS>" || key == "\<c-u>"
-    if key =~ '^\p$'
-      prompt_text ..= key
-    elseif keytrans(key) ==# "<BS>"
-      if len(prompt_text) > 0
-        prompt_text = prompt_text[: -2]
-      endif
-    elseif key == "\<c-u>"
-      prompt_text = ""
+
+      var opts = popup_getoptions(prompt_id)
+      var num_hits = len(filtered_results)
+      var base_title = trim(opts.title->matchstr('.*\ze('))
+      opts.title = $' {base_title} ({num_hits}) '
+      popup_setoptions(prompt_id, opts)
+      popup_settext(main_id, filtered_results)
+    else
+      # TODO handle the default case
+      echo "Unknown character"
     endif
 
-    popup_settext(prompt_id, $'{prompt_sign}{prompt_text}{prompt_cursor}')
-    var filtered_results_full = []
-    var filtered_results = results
-    if !empty(prompt_text)
-      filtered_results_full = results->matchfuzzypos(prompt_text)
-      filtered_results = filtered_results_full[0]
+    if preview_id != -1
+      UpdateFilePreview(search_type, search_pattern)
     endif
 
-    var opts = popup_getoptions(prompt_id)
-    var num_hits = len(filtered_results)
-    var base_title = trim(opts.title->matchstr('.*\ze('))
-    opts.title = $' {base_title} ({num_hits}) '
-    popup_setoptions(prompt_id, opts)
-    popup_settext(main_id, filtered_results)
-  else
-    # TODO handle the default case
-    echo "Unknown character"
-  endif
-
-  if preview_id != -1
-    UpdateFilePreview(search_type, search_pattern)
-  endif
-
-  if search_type == 'color'
-    ShowColorscheme(current_background)
-  endif
+    if search_type == 'color'
+      ShowColorscheme(current_background)
+    endif
+  catch
+    Echoerr('Unkown key')
+    ClosePopups()
+  endtry
 
   return true
 enddef
@@ -420,21 +426,17 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     opts.maxwidth = popup_width
 
     # Opts for preview_id
-    opts.col = popup_width + popup_width / 2 + 1
+    opts.col = popup_width + popup_width / 2
     preview_id = popup_create("Something went wrong."
           .. "Run :call popup_clear() to close.", opts)
 
 
-    # TODO Study how popus are sized and positioned on screen
-    # If too many results, the scrollbar overlap the preview popup
     opts.col = popup_width - popup_width / 2 - 2
 
     UpdateFilePreview(search_type, search_pattern)
   endif
 
   if search_type == 'color'
-    # opts.filter = (id, key) => PopupFilterColor(id, key, current_colorscheme,
-    #   current_background)
     var init_highlight_location = index(results, current_colorscheme)
     win_execute(main_id, $'norm {init_highlight_location }j')
   endif
