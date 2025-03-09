@@ -21,8 +21,6 @@ var prompt_text: string
 # Hide cursor when operating in the popups
 var gui_cursor: list<dict<any>>
 
-# Disable problematic keys
-var saved_c_c: dict<any>
 
 def Echoerr(msg: string)
   echohl ErrorMsg | echom $"[poptools] {msg}" | echohl None
@@ -44,9 +42,10 @@ def InitScriptLocalVars()
   prompt_sign = '> '
   prompt_text = ''
 
-  saved_c_c = maparg('<C-c>', 'n', false, true)
+  prop_type_add('PopupToolsMatched', {highlight: 'WarningMsg'})
 enddef
 
+# TODO: If the <c-c> problem is not solved, don't try to hide the cursor
 def RestoreCursor()
     set t_ve&
     if hlget("Cursor")[0]->get('cleared', false)
@@ -235,6 +234,7 @@ def ClosePopups()
   popup_close(main_id, -1)
   popup_close(prompt_id, -1)
   RestoreCursor()
+  prop_type_delete('PopupToolsMatched')
 enddef
 
 def PopupFilter(id: number,
@@ -256,7 +256,7 @@ def PopupFilter(id: number,
 
   var maxheight = popup_getoptions(main_id).maxheight
 
-  if key == "\<esc>" || key == "\<C-c>"
+  if key == "\<esc>"
     if search_type == 'color'
       exe $'colorscheme {current_colorscheme}'
     endif
@@ -265,71 +265,96 @@ def PopupFilter(id: number,
   endif
 
   # You never know what the user can type...
-  try
-    if key == "\<CR>"
-      popup_close(main_id, getcurpos(main_id)[1])
-    elseif ["\<Right>", "\<PageDown>"]->index(key) > -1
-        win_execute(main_id, 'normal! ' .. maxheight .. "\<C-d>")
-    elseif ["\<Left>", "\<PageUp>"]->index(key) > -1
-        win_execute(main_id, 'normal! ' .. maxheight .. "\<C-u>")
-    elseif key == "\<Home>"
-        win_execute(main_id, "normal! gg")
-    elseif key == "\<End>"
-        win_execute(main_id, "normal! G")
-    elseif ["\<tab>", "\<C-n>", "\<Down>", "\<ScrollWheelDown>"]->index(key) > -1
-        var ln = getcurpos(main_id)[1]
-        win_execute(main_id, "normal! j")
-        if ln == getcurpos(main_id)[1]
-            win_execute(main_id, "normal! gg")
-        endif
-    elseif ["\<S-Tab>", "\<C-p>", "\<Up>", "\<ScrollWheelUp>"]->index(key) > -1
-        var ln = getcurpos(main_id)[1]
-        win_execute(main_id, "normal! k")
-        if ln == getcurpos(main_id)[1]
-            win_execute(main_id, "normal! G")
-        endif
-    # The real deal: take a single, printable character
-    elseif key =~ '^\p$' || keytrans(key) ==# "<BS>" || key == "\<c-u>"
-      if key =~ '^\p$'
-        prompt_text ..= key
-      elseif keytrans(key) ==# "<BS>"
-        if len(prompt_text) > 0
-          prompt_text = prompt_text[: -2]
-        endif
-      elseif key == "\<c-u>"
-        prompt_text = ""
+  # echo "Pressed key: " .. key
+  echo ''
+  if key == "\<CR>"
+    popup_close(main_id, getcurpos(main_id)[1])
+    ClosePopups()
+  elseif ["\<Right>", "\<PageDown>"]->index(key) > -1
+      win_execute(main_id, 'normal! ' .. maxheight .. "\<C-d>")
+  elseif ["\<Left>", "\<PageUp>"]->index(key) > -1
+      win_execute(main_id, 'normal! ' .. maxheight .. "\<C-u>")
+  elseif key == "\<Home>"
+      win_execute(main_id, "normal! gg")
+  elseif key == "\<End>"
+      win_execute(main_id, "normal! G")
+  elseif ["\<tab>", "\<C-n>", "\<Down>", "\<ScrollWheelDown>"]->index(key) > -1
+      var ln = getcurpos(main_id)[1]
+      win_execute(main_id, "normal! j")
+      if ln == getcurpos(main_id)[1]
+          win_execute(main_id, "normal! gg")
       endif
-
-      popup_settext(prompt_id, $'{prompt_sign}{prompt_text}{prompt_cursor}')
-      var filtered_results_full = []
-      var filtered_results = results
-      if !empty(prompt_text)
-        filtered_results_full = results->matchfuzzypos(prompt_text)
-        filtered_results = filtered_results_full[0]
+  elseif ["\<S-Tab>", "\<C-p>", "\<Up>", "\<ScrollWheelUp>"]->index(key) > -1
+      var ln = getcurpos(main_id)[1]
+      win_execute(main_id, "normal! k")
+      if ln == getcurpos(main_id)[1]
+          win_execute(main_id, "normal! G")
       endif
+  # The real deal: take a single, printable character
+  elseif key =~ '^\p$' || keytrans(key) ==# "<BS>" || key == "\<c-u>"
+    if key =~ '^\p$'
+      prompt_text ..= key
+    elseif keytrans(key) ==# "<BS>"
+      if len(prompt_text) > 0
+        prompt_text = prompt_text[: -2]
+      endif
+    elseif key == "\<c-u>"
+      prompt_text = ""
+    endif
 
-      var opts = popup_getoptions(prompt_id)
-      var num_hits = len(filtered_results)
-      var base_title = trim(opts.title->matchstr('.*\ze('))
-      opts.title = $' {base_title} ({num_hits}) '
-      popup_setoptions(prompt_id, opts)
+    popup_settext(prompt_id, $'{prompt_sign}{prompt_text}{prompt_cursor}')
+
+    # What you pass to popup_settext(main_id, ...) is a list of strings with
+    # text properties attached, e.g.
+    #
+    # [
+    #   { "text": "filename.txt",
+    #     "props": [ {"col": 2, "length": 1, "type": "FuzzyOldfiles"}, ... ]
+    #   },
+    #   { "text": "another_file.txt",
+    #     "props": [ {"col": 1, "length": 1, "type": "FuzzyOldfiles"}, ... ]
+    #   },
+    #   ...
+    # ]
+    var filtered_results_full = []
+    var filtered_results: list<dict<any>>
+    if !empty(prompt_text)
+      filtered_results_full = results->matchfuzzypos(prompt_text)
+      var pos = filtered_results_full[1]
+      filtered_results = filtered_results_full[0]
+        ->map((ii, match) => ({
+          text: match,
+          props: pos[ii]->copy()->map((_, col) => ({
+            col: col + 1,
+            length: 1,
+            type: 'PopupToolsMatched'
+        }))}))
+    endif
+
+    var opts = popup_getoptions(prompt_id)
+    var num_hits = !empty(filtered_results)
+      ? len(filtered_results)
+      : len(results)
+    var base_title = trim(opts.title->matchstr('.*\ze('))
+    opts.title = $' {base_title} ({num_hits}) '
+    popup_setoptions(prompt_id, opts)
+
+    if !empty(filtered_results)
       popup_settext(main_id, filtered_results)
     else
-      # TODO handle the default case
-      echo "Unknown character"
+      popup_settext(main_id, results)
     endif
+  else
+    Echowarn('Unknown key')
+  endif
 
-    if preview_id != -1
-      UpdateFilePreview(search_type, search_pattern)
-    endif
+  if preview_id != -1
+    UpdateFilePreview(search_type, search_pattern)
+  endif
 
-    if search_type == 'color'
-      ShowColorscheme(current_background)
-    endif
-  catch
-    Echoerr('Unkown key')
-    ClosePopups()
-  endtry
+  if search_type == 'color'
+    ShowColorscheme(current_background)
+  endif
 
   return true
 enddef
@@ -366,7 +391,7 @@ def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: 
     mapping: 0,
     scrollbar: 0,
     wrap: 0,
-    drag: 1,
+    drag: 0,
   }
 
   # Filter
@@ -394,9 +419,9 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   hi link PopupSelected PmenuSel
 
   # hide cursor
-  set t_ve=
-  gui_cursor = hlget("Cursor")
-  hlset([{name: 'Cursor', cleared: true}])
+  # set t_ve=
+  # gui_cursor = hlget("Cursor")
+  # hlset([{name: 'Cursor', cleared: true}])
 
   # Set script-local variables
   popup_width = eval('&columns / 3') * 2
@@ -418,7 +443,7 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
     cursorline: 1,
     mapping: 0,
     wrap: 0,
-    drag: 1,
+    drag: 0,
   }
 
   main_id = popup_create(results, opts)
