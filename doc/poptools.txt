@@ -20,7 +20,7 @@ multitude of tasks, from finding files and directories, to setting your
 favorite colorscheme.
 
 Once a list of results is slammed into a popup menu, you can filter it in a
-fuzzy or in a regex-based way.
+fuzzy or in an exact way.
 
 Poptools is more essential compared to similar plugins, but differently
 from them, external programs are called _synchronously_, although things may
