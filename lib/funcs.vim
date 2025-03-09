@@ -1,28 +1,48 @@
 vim9script
 
 # TODO Exclude 'wildignore' paths in Grep (it uses an external program)
-# TODO Study how can you make popup_width and popup_height them parametric
-var popup_width = -1
-var popup_height = -1
+var popup_width: number
+var popup_height: number
 
+# This must be persistent across different calls
 var last_results = []
 var last_title = ''
 var last_search_type = ''
 var last_search_pattern = ''
 
-var main_id = -1
-var prompt_id = -1
-var preview_id = -1
+var main_id: number
+var prompt_id: number
+var preview_id: number
 
-var prompt_cursor = '▏'
-var prompt_sign = '> '
-var prompt_text = ''
+var prompt_cursor: string
+var prompt_sign: string
+var prompt_text: string
 
 # Hide cursor when operating in the popups
-var gui_cursor = []
+var gui_cursor: list<dict<any>>
+
+# Disable problematic keys
+var saved_c_c: dict<any>
 
 def Echoerr(msg: string)
-  echohl ErrorMsg | echom $"{msg}" | echohl None
+  echohl ErrorMsg | echom $"[poptools] {msg}" | echohl None
+enddef
+
+def Echowarn(msg: string)
+  echohl WarningMsg | echom $"[poptools] {msg}" | echohl None
+enddef
+
+def InitScriptLocalVars()
+  popup_width = -1
+  popup_height = -1
+
+  main_id = -1
+  prompt_id = -1
+  preview_id = -1
+
+  prompt_cursor = '▏'
+  prompt_sign = '> '
+  prompt_text = ''
 enddef
 
 def RestoreCursor()
@@ -367,8 +387,9 @@ def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: 
 enddef
 
 def ShowPopup(title: string, results: list<string>, search_type: string, search_pattern: string = '')
+  InitScriptLocalVars()
 
-  # TODO: why you have the ^@ at the beginning of execute('colorscheme') ???
+  # For some reason you get ^@
   var current_colorscheme = execute('colorscheme')->substitute('\n', '', 'g')
   var current_background = &background
   hi link PopupSelected PmenuSel
