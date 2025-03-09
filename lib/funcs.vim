@@ -294,9 +294,8 @@ def PopupFilter(id: number,
 
     var opts = popup_getoptions(prompt_id)
     var num_hits = len(filtered_results)
-    # TODO make it parametric
-    var base_title = ' Filter:'
-    opts.title = $'{base_title} ({num_hits}) '
+    var base_title = trim(opts.title->matchstr('.*\ze('))
+    opts.title = $' {base_title} ({num_hits}) '
     popup_setoptions(prompt_id, opts)
     popup_settext(main_id, filtered_results)
   else
@@ -367,7 +366,7 @@ def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: 
   ? popup_width
   : 2 * popup_width + 2
 
-  var base_title = ' Filter:'
+  var base_title = 'Filter:'
   var opts = {
     minwidth: prompt_width,
     maxwidth: prompt_width,
@@ -394,7 +393,7 @@ def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: 
 
 
   var num_hits = len(getbufline(winbufnr(main_id), 1, "$"))
-  opts.title = $'{base_title} ({num_hits}) '
+  opts.title = $' {base_title} ({num_hits}) '
 
   prompt_text = ""
   prompt_id = popup_create([prompt_sign .. prompt_cursor], opts)
