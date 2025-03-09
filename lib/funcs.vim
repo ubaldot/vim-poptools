@@ -200,6 +200,7 @@ def UpdateFilePreview(search_type: string, search_pattern: string)
 enddef
 
 def ClosePopups()
+  # This function tear down everything
   if preview_id != -1
     popup_close(preview_id, -1)
   endif
@@ -210,13 +211,19 @@ def ClosePopups()
   popup_close(main_id, -1)
   popup_close(prompt_id, -1)
   RestoreCursor()
+  main_id = -1
+  prompt_id = -1
+  preview_id = -1
 enddef
 
 def PopupFilter(id: number,
     key: string,
     results: list<string>,
     search_type: string,
-    search_pattern: string): bool
+    search_pattern: string,
+    current_colorscheme: string,
+    current_background: string,
+    ): bool
 
   if index(['file', 'file_in_path', 'grep'], search_type) != -1
     # Save for last search
@@ -231,46 +238,33 @@ def PopupFilter(id: number,
   # Handle keys
   if key == "\<esc>"
     ClosePopups()
+    if search_pattern == 'color'
+      exe $'colorscheme {current_colorscheme}'
+    endif
     return true
-  elseif key == "\<CR>" || key == "\<c-c>"
+  endif
+
+  if key == "\<CR>" || key == "\<c-c>"
     popup_close(main_id, getcurpos(main_id)[1])
   elseif ["\<Right>", "\<PageDown>"]->index(key) > -1
       win_execute(main_id, 'normal! ' .. maxheight .. "\<C-d>")
-      if preview_id != -1
-        UpdateFilePreview(search_type, search_pattern)
-      endif
   elseif ["\<Left>", "\<PageUp>"]->index(key) > -1
       win_execute(main_id, 'normal! ' .. maxheight .. "\<C-u>")
-      if preview_id != -1
-        UpdateFilePreview(search_type, search_pattern)
-      endif
   elseif key == "\<Home>"
       win_execute(main_id, "normal! gg")
-      if preview_id != -1
-        UpdateFilePreview(search_type, search_pattern)
-      endif
   elseif key == "\<End>"
       win_execute(main_id, "normal! G")
-      if preview_id != -1
-        UpdateFilePreview(search_type, search_pattern)
-      endif
   elseif ["\<tab>", "\<C-n>", "\<Down>", "\<ScrollWheelDown>"]->index(key) > -1
       var ln = getcurpos(main_id)[1]
       win_execute(main_id, "normal! j")
       if ln == getcurpos(main_id)[1]
           win_execute(main_id, "normal! gg")
       endif
-      if preview_id != -1
-        UpdateFilePreview(search_type, search_pattern)
-      endif
   elseif ["\<S-Tab>", "\<C-p>", "\<Up>", "\<ScrollWheelUp>"]->index(key) > -1
       var ln = getcurpos(main_id)[1]
       win_execute(main_id, "normal! k")
       if ln == getcurpos(main_id)[1]
           win_execute(main_id, "normal! G")
-      endif
-      if preview_id != -1
-        UpdateFilePreview(search_type, search_pattern)
       endif
   # Take a single, printable character
   elseif key =~ '^\p$' || keytrans(key) ==# "<BS>" || key == "\<c-u>"
@@ -302,6 +296,15 @@ def PopupFilter(id: number,
     # TODO handle the default case
     echo "Unknown character"
   endif
+
+  if preview_id != -1
+    UpdateFilePreview(search_type, search_pattern)
+  endif
+
+  if search_type == 'color'
+    ShowColorscheme(current_background)
+  endif
+
   return true
 enddef
 
@@ -318,44 +321,6 @@ def ShowColorscheme(current_background: string)
   endif
 enddef
 
-def PopupFilterColor(id: number, key: string, current_colorscheme: string, current_background: string): bool
-
-  var maxheight = popup_getoptions(main_id).maxheight
-  if key == "\<esc>"
-    ClosePopups()
-    exe $'colorscheme {current_colorscheme}'
-    return true
-  elseif ["\<Right>", "\<PageDown>"]->index(key) > -1
-    win_execute(main_id, 'normal! ' .. maxheight .. "\<C-d>")
-    ShowColorscheme(current_background)
-  elseif ["\<Left>", "\<PageUp>"]->index(key) > -1
-    win_execute(main_id, 'normal! ' .. maxheight .. "\<C-u>")
-    ShowColorscheme(current_background)
-  elseif key == "\<Home>"
-    win_execute(main_id, "normal! gg")
-    ShowColorscheme(current_background)
-  elseif key == "\<End>"
-    win_execute(main_id, "normal! G")
-    ShowColorscheme(current_background)
-  elseif ["\<tab>", "\<C-n>", "\<Down>", "\<ScrollWheelDown>"]->index(key) > -1
-    var ln = getcurpos(main_id)[1]
-    win_execute(main_id, "normal! j")
-    if ln == getcurpos(main_id)[1]
-        win_execute(main_id, "normal! gg")
-    endif
-    ShowColorscheme(current_background)
-  elseif ["\<S-Tab>", "\<C-p>", "\<Up>", "\<ScrollWheelUp>"]->index(key) > -1
-    var ln = getcurpos(main_id)[1]
-    win_execute(main_id, "normal! k")
-    if ln == getcurpos(main_id)[1]
-        win_execute(main_id, "normal! G")
-    endif
-    ShowColorscheme(current_background)
-  else
-    # TODO
-  endif
-    return true
-enddef
 #
 # -------- MAIN
 def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: string)
@@ -381,15 +346,10 @@ def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: 
   }
 
   # Filter
-  if search_type == 'color'
-    var current_colorscheme = execute('colorscheme')->substitute('\n', '', 'g')
-    var current_background = &background
-    opts.filter = (id, key) => PopupFilterColor(id, key, current_colorscheme,
-      current_background)
-  else
-    opts.filter = (id, key) => PopupFilter(id, key, results, search_type,
-      search_pattern)
-  endif
+  var current_colorscheme = execute('colorscheme')->substitute('\n', '', 'g')
+  var current_background = &background
+  opts.filter = (id, key) => PopupFilter(id, key, results, search_type,
+    search_pattern, current_colorscheme, current_background)
 
 
   var num_hits = len(getbufline(winbufnr(main_id), 1, "$"))
@@ -473,8 +433,8 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   endif
 
   if search_type == 'color'
-    opts.filter = (id, key) => PopupFilterColor(id, key, current_colorscheme,
-      current_background)
+    # opts.filter = (id, key) => PopupFilterColor(id, key, current_colorscheme,
+    #   current_background)
     var init_highlight_location = index(results, current_colorscheme)
     win_execute(main_id, $'norm {init_highlight_location }j')
   endif
