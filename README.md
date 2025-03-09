@@ -66,21 +66,18 @@ Vim the options `:h 'wildignore'`, `:h 'wildoptions'` and `:h 'path'`.
 ### Preview window
 
 You may not want the preview window in every case. For example, you want it
-when you _grep_ but not when you open recent files. You can specify when you
-want the following keys:
+when you _grep_ but not when you open recent files. If that is the case, do as
+it follows
 
 ```
- 'preview_file',
- 'preview_file_in_path',
- 'preview_recent_files',
- 'preview_buffer',
- 'preview_grep'.
+g:poptools_config['preview_grep'] = true
+g:poptools_config['preview_recent_files'] = false,
 ```
 
-You can for example specify
-`g:poptools_config['preview_grep'] = true, g:poptools_config['preview_recent_files'] = false,`
-to have a preview window in your grep result list, but not in the recent files
-list.
+To see the whole list of keys allowed in the `g:poptools_config` dictionary,
+take a look at `:h poptools.txt`.
+
+### Syntax highlight in the preview window
 
 Syntax highlight in the preview can be handy, but it may slow down the user
 experience. You can avoid using syntax highlight in the preview window by
@@ -88,8 +85,11 @@ setting `g:poptools_config['preview_syntax'] = false`. This is useful in case
 you are encountering troubles when using the preview window. The match are
 still highlighted.
 
-All the boolean values in the `g:poptools_config` are set to `true` as
-default.
+
+### To fuzzy or not to fuzzy?
+
+You can filter the results either in a fuzzy or exact fashion. You choose it
+by setting `g:poptools_config['fuzzy_search']` to `true` or to `false`.
 
 It follows an example of configuration:
 
@@ -97,14 +97,10 @@ It follows an example of configuration:
 g:poptools_config = {}`
 g:poptools_config['preview_syntax'] = false
 g:poptools_config['preview_recent_files'] = false
+g:poptools_config['fuzzy_search'] = false
 ```
 
-### To fuzzy or not to fuzzy?
-
-You can filter the results either in a fuzzy or exact fashion. You choose it
-by setting `g:poptools_config['fuzzy_search']` to `true` or to `false`.
-
-## Some notes on file search
+## Some notes on files/patterns search
 
 `PoptoolsFindFile` and `PoptoolsFindInPath`
 
