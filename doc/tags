@@ -1,0 +1,8 @@
+g:poptools_config	poptools.txt	/*g:poptools_config*
+poptools-commands	poptools.txt	/*poptools-commands*
+poptools-configuration	poptools.txt	/*poptools-configuration*
+poptools-contents	poptools.txt	/*poptools-contents*
+poptools-introduction	poptools.txt	/*poptools-introduction*
+poptools-license	poptools.txt	/*poptools-license*
+poptools-requirements	poptools.txt	/*poptools-requirements*
+poptools.txt	poptools.txt	/*poptools.txt*

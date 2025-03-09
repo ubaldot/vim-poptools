@@ -1,0 +1,124 @@
+*poptools.txt*
+
+Author: ubaldot (ubaldo DOT tiberi AT gmail DOT com)
+For Vim version 9.0 and above
+
+==============================================================================
+CONTENTS                                            *poptools-contents*
+
+    1. Introduction ......... |poptools-introduction|
+    2. Requirements ......... |poptools-requirements|
+    3. Commands ............. |poptools-commands|
+    4. Configuration ........ |poptools-configuration|
+    5. License .............. |poptools-license|
+
+==============================================================================
+INTRODUCTION                                    *poptools-introduction*
+
+This plugin aims to scale your productivity by conveniently using popups for a
+multitude of tasks, from finding files and directories, to setting your
+favorite colorscheme.
+
+Once a list of results is slammed into a popup menu, you can filter it in an
+exact or fuzzy way. This is useful when you get a long list of matches.
+
+This plugin is more essential compared to similar plugins, but differently
+from them, external programs are called _synchronously_, although things may
+change in the future. :)
+
+Nevertheless, I personally like the interface and how it displays all the
+results at once. Additionally, I find the opportunity of saving the last
+search very handy. The configuration is also fairly straightforward.
+
+==============================================================================
+REQUIREMENTS                                    *poptools-requirements*
+
+Vim 9.0 is required.
+
+==============================================================================
+COMMANDS                                          *poptools-commands*
+
+It follows the list of available commads: >
+
+    :PoptoolsFindFile
+    :PoptoolsFindFileInPath # Takes into account the setting of :h 'path'.
+    :PoptoolsFindDir
+    :PoptoolsBuffers
+    :PoptoolsRecentFiles
+    :PoptoolsCmdHistory
+    # When something goes wrong, you can clear all the Poptools popups
+    :PoptoolsKill
+    # The displayed colors depends on the value of :h 'background'
+    :PoptoolsColorscheme
+    :PoptoolsGrepInBuffer # Find pattern in the current buffer
+    :PoptoolsGrep # External grep. Grep command is displayed.
+     # Vimgrep, show results in the quickfix-list instead of a popup.
+    :PoptoolsVimgrep
+    :PoptoolsLastSearch # Show the last search results
+<
+
+==============================================================================
+CONFIGURATION                    *poptools-configuration* *g:poptools_config*
+
+The plug configuration is done through `g:poptools_config` dictionary.
+Be sure to create the empty dictionary `g:poptools_config = {}` before
+filling it with he various keys.
+
+      Available keys:
+        "preview_file"    Set to `true` if you want a preview window when
+                          searching for files.
+                          Default `false`.
+"preview_file_in_path"    Set to `true` if you want a preview window when
+                          searching for files in path.
+                          Default `false`.
+"preview_recent_files"    Set to `true` if you want a preview window when
+                          searching for recently opened files.
+                          Default `false`.
+     "preview_buffers"    Set to `true` if you want a preview window when
+                          searching for buffers.
+                          Default `false`.
+       "preview_grep"     Set to `true` if you want a preview window when
+                          using poptools grep functions.
+                          Default `false`.
+       "preview_grep"     Set to `true` if you want a preview window when
+                          using poptools grep functions.
+                          Default `false`.
+       "fuzzy_search"     Set to `true` if you want a fuzzy filtering of the
+                          results, or to `false` if you want to filter based
+                          on exact match. Default `true`.
+       "preview_syntax"   Set to `true` if you want syntax highlighting in the
+                          preview window. Note that syntax highlighting may
+                          slow down the user-experience. Default `true`.
+
+==============================================================================
+LICENSE                                            *poptools-license*
+
+BSD 3-Clause License
+
+Copyright (c) 2025, Ubaldo Tiberi.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+* Neither the name of the copyright holder nor the names of its
+  contributors may be used to endorse or promote products derived from
+  this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

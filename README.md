@@ -14,9 +14,8 @@ This plugin aims to scale your productivity by conveniently using popups for a
 multitude of tasks, from finding files and directories, to setting your
 favorite colorscheme.
 
-Once a list of results is slammed into a popup menu, you can easily fuzzy
-filter it. This is useful when you get a long list of matches, which is
-typical in the case of recently opened files or of command history.
+Once a list of results is slammed into a popup menu, you can filter it in an
+exact or fuzzy way. This is useful when you get a long list of matches.
 
 This plugin is more essential compared to similar plugins such as [fzf][0],
 [fuzzyy][1] or [scope][2] and differently from them, external programs are
