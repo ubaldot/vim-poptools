@@ -10,15 +10,15 @@ Exploit popups as much as you can!
 * Vim-poptools *
 </p>
 
-This plugin aims to scale your productivity by conveniently using popups for a
+Poptools aims to scale your productivity by conveniently using popups for a
 multitude of tasks, from finding files and directories, to setting your
 favorite colorscheme.
 Once a list of results is slammed into a popup menu, you can filter it in an
-exact or fuzzy way.
+fuzzy fashion or through regex.
 
-This plugin is more essential compared to similar plugins such as [fzf][0],
+Poptools is more essential compared to similar plugins such as [fzf][0],
 [fuzzyy][1] or [scope][2] and differently from them, external programs are
-called _synchronously_, but things may change in the future. :)
+called _synchronously_, although things may change in the future. :)
 
 Nevertheless, I personally like the interface and how it displays all the
 results at once. Additionally, I find the opportunity of saving the last
@@ -84,8 +84,8 @@ still highlighted.
 
 ### To fuzzy or not to fuzzy?
 
-You can filter the results either in a fuzzy or exact fashion. You choose it
-by setting `g:poptools_config['fuzzy_search']` to `true` or to `false`.
+You can filter the results either in a fuzzy or in a regex fashion. You choose
+it by setting `g:poptools_config['fuzzy_search']` to `true` or to `false`.
 
 It follows an example of configuration:
 
