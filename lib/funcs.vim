@@ -4,7 +4,8 @@ vim9script
 var popup_width: number
 var popup_height: number
 
-# This must be persistent across different calls
+# This must be persistent across different calls and therefore we explicitly
+# assign a number
 var last_results = []
 var last_title = ''
 var last_search_type = ''
@@ -17,6 +18,10 @@ var preview_id: number
 var prompt_cursor: string
 var prompt_sign: string
 var prompt_text: string
+
+# User defined settings through g:poptools_config
+var fuzzy_search: bool
+var preview_syntax: bool
 
 # Hide cursor when operating in the popups
 var gui_cursor: list<dict<any>>
@@ -41,6 +46,18 @@ def InitScriptLocalVars()
   prompt_cursor = '▏'
   prompt_sign = '> '
   prompt_text = ''
+
+  if exists('g:poptools_config') && has_key(g:poptools_config, 'preview_syntax')
+    preview_syntax = g:poptools_config['preview_syntax']
+  else
+    preview_syntax = true
+  endif
+
+  if exists('g:poptools_config') && has_key(g:poptools_config, 'fuzzy_search')
+    fuzzy_search = g:poptools_config['fuzzy_search']
+  else
+    fuzzy_search = true
+  endif
 
   if empty(prop_type_get('PopupToolsMatched'))
       prop_type_add('PopupToolsMatched', {highlight: 'WarningMsg'})
@@ -197,7 +214,7 @@ def UpdateFilePreview(search_type: string, search_pattern: string)
 
     # Syntax highlight if it creates problems, disable it. It is not
     # bulletproof
-    if get(g:poptools_config, 'preview_syntax', true)
+    if preview_syntax
       # set 'synmaxcol' for avoiding crashing if some readable file has
       # embedded figures.
       # Figure generate lines with >80000 columns and the internal engine
@@ -314,17 +331,38 @@ def PopupFilter(id: number,
     #
     var filtered_results_full = []
     var filtered_results: list<dict<any>>
+
     if !empty(prompt_text)
-      filtered_results_full = results->matchfuzzypos(prompt_text)
-      var pos = filtered_results_full[1]
-      filtered_results = filtered_results_full[0]
-        ->map((ii, match) => ({
-          text: match,
-          props: pos[ii]->copy()->map((_, col) => ({
-            col: col + 1,
-            length: 1,
-            type: 'PopupToolsMatched'
-        }))}))
+      if fuzzy_search
+        filtered_results_full = results->matchfuzzypos(prompt_text)
+        var pos = filtered_results_full[1]
+        filtered_results = filtered_results_full[0]
+          ->map((ii, match) => ({
+            text: match,
+            props: pos[ii]->copy()->map((_, col) => ({
+              col: col + 1,
+              length: 1,
+              type: 'PopupToolsMatched'
+            }))}))
+      else
+        filtered_results_full = copy(results)
+          ->map((_, text) => matchstrpos(text, prompt_text))
+          ->map((idx, match_info) => [results[idx], match_info[1],
+          match_info[2]])
+
+        filtered_results = copy(filtered_results_full)
+          ->map((_, val) => ({
+            text: val[0],
+            props: val[1] >= 0 && val[2] >= 0
+              ? [{
+                type: 'PopupToolsMatched',
+                col: val[1] + 1,
+                end_col: val[2] + 1
+              }]
+              : []
+          }))
+          ->filter("!empty(v:val.props)")
+      endif
     endif
 
     var opts = popup_getoptions(prompt_id)
@@ -445,15 +483,25 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
   # Preview handling
   var show_preview = false
   if search_type == 'file'
-    show_preview = get(g:poptools_config, 'preview_file', true)
+    if exists('g:poptools_config') && has_key(g:poptools_config, 'preview_file')
+      show_preview = g:poptools_config['preview_file']
+    endif
   elseif search_type == 'file_in_path'
-    show_preview = get(g:poptools_config, 'preview_file_in_path', true)
+    if exists('g:poptools_config') && has_key(g:poptools_config, 'preview_file_in_path')
+      show_preview = g:poptools_config['preview_file_in_path']
+    endif
   elseif search_type == 'recent_files'
-    show_preview = get(g:poptools_config, 'preview_recent_files', true)
+    if exists('g:poptools_config') && has_key(g:poptools_config, 'preview_recent_files')
+      show_preview = g:poptools_config['preview_recent_files']
+    endif
   elseif search_type == 'buffer'
-    show_preview = get(g:poptools_config, 'preview_buffers', true)
+    if exists('g:poptools_config') && has_key(g:poptools_config, 'preview_buffers')
+      show_preview = g:poptools_config['preview_buffers']
+    endif
   elseif search_type == 'grep'
-    show_preview = get(g:poptools_config, 'preview_grep', true)
+    if exists('g:poptools_config') && has_key(g:poptools_config, 'preview_grep')
+      show_preview = g:poptools_config['preview_grep']
+    endif
   endif
 
   if show_preview
