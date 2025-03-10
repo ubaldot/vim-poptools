@@ -134,6 +134,7 @@ where the values of `{what}`,`{files}` and `{search_dir}` are replaced by
 user input.
 
 > [CAUTION!]
+>
 > What follows may not work super-well.
 >
 
