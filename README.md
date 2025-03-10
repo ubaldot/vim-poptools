@@ -120,12 +120,22 @@ This command uses an external "grep" program and therefore it is not affected
 by the Vim options settings. The default "grep" commands are the following:
 
 ```
-  cmd_win_default = 'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {items}"'
+  # Windows
+  cmd_win_default =
+    'powershell -NoProfile -ExecutionPolicy Bypass -Command '
+      .. '"& {Set-Location -LiteralPath ''' .. search_dir .. '''; findstr /C:'''
+      .. what .. ''' /N /S ''' .. items .. '''}"'
+
+  # *nix
   cmd_nix_default = 'grep -nrH --include="{items}" "{what}" {search_dir}'
 ```
 
 where the values of `{what}`,`{files}` and `{search_dir}` are replaced by
 user input.
+
+> [CAUTION!]
+> What follows may not work super-well.
+>
 
 You can also configure your own grep commands through the keys `grep_cmd_win`
 and `grep_cmd_nix` of the `g:poptools_config` dictionary and you can use the
@@ -133,7 +143,9 @@ placeholders `{search_dir}, {items}` and `{what}`. For example, you could set
 the following
 
 ```
-g:poptools_config['grep_cmd_win'] = 'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {items}"'
+g:poptools_config['grep_cmd_win'] = 'powershell -NoProfile -ExecutionPolicy '
+.. 'Bypass -Command "& {Set-Location -LiteralPath ''{search_dir}''; '
+.. 'findstr /C:''{what}'' /N /S {items}}"'
 ```
 
 The "grep" command sent to the shell is displayed in the command line and it

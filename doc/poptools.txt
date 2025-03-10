@@ -90,12 +90,18 @@ filling it with he various keys.
                           preview window. Note that syntax highlighting may
                           slow down the user-experience. Default `true`.
        "grep_cmd_win"     Command used to perform search in Windows.
-                          Default: `'powershell -NoProfile -ExecutionPolicy
-                          \ Bypass -Command "cd {search_dir};findstr
-                          \ /C:{shellescape(what)} /N /S {items}"'`
+                          Default:
+      >
+      'powershell -NoProfile -ExecutionPolicy Bypass -Command '
+      .. '"& {Set-Location -LiteralPath ''' .. search_dir .. '''; findstr /C:'''
+      .. what .. ''' /N /S ''' .. items .. '''}"
+<
+
        "grep_cmd_nix"     Command used to perform search in *nix systems.
                           Default:
-                          `grep -nrH --include="{items}" "{what}" {search_dir}`
+      >
+        grep -nrH --include="{items}" "{what}" {search_dir}
+<
 
 
 The "grep" command sent to the shell is displayed in the command line and it

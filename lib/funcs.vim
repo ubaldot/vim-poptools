@@ -766,30 +766,30 @@ export def Grep()
   endif
   &wildmenu = current_wildmenu
 
+  # Windows default
+  var cmd_win_default =
+    'powershell -NoProfile -ExecutionPolicy Bypass -Command '
+      .. '"& {Set-Location -LiteralPath ''' .. search_dir .. '''; findstr /C:'''
+      .. what .. ''' /N /S ''' .. items .. '''}"'
 
-  # External search command definitions
-  var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass
-        \ -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {items}"'
-  # var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass
-  #       \  -Command "for /R \"{search_dir}\" %f in ({items}) do @findstr /C:\"{what}\" /N \"%f\""'
-  # var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass
-  # -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S
-  #  {items}|findstr /V /R \"^\\..*\\\\\""'
-  #  The following is faster because it uses cmd.exe
-  # var cmd_win_default = $'cmd.exe /c cd {shellescape(search_dir)} && findstr
-  # /C:{shellescape(what)} /N /S {items} | findstr /V /R "^\..*\\\\"'
+  # *nix default
   var cmd_nix_default = $'grep -nrH --include="{items}" "{what}" {search_dir}'
 
   var cmd_win = cmd_win_default
   if exists('g:poptools_config') && has_key(g:poptools_config, 'grep_cmd_win')
-    var tmp = printf("$'%s'", g:poptools_config['grep_cmd_win'])
-    cmd_win = eval(tmp)
+    var search_dir_escaped = escape(search_dir, '\')
+    cmd_win = g:poptools_config['grep_cmd_win']
+      ->substitute("{search_dir}", $"{search_dir_escaped}", '')
+      ->substitute("{items}", items, '')
+      ->substitute("{what}", $"{what}", '')
   endif
 
   var cmd_nix = cmd_nix_default
   if exists('g:poptools_config') && has_key(g:poptools_config, 'grep_cmd_nix')
-    var tmp = printf("$'%s'", g:poptools_config['grep_cmd_nix'])
-    cmd_nix = eval(tmp)
+    cmd_nix = g:poptools_config['grep_cmd_nix']
+      ->substitute("{search_dir}", search_dir, '')
+      ->substitute("{items}", items, '')
+      ->substitute("{what}", what, '')
   endif
 
   # clean up the command-line: needed!
