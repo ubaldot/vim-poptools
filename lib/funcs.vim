@@ -364,7 +364,8 @@ def PopupFilter(id: number,
               }))}))
         else
           filtered_results_full = copy(results)
-            ->map((_, text) => matchstrpos(text, '\V' .. $"{escape(prompt_text, '\')}"))
+            ->map((_, text) => matchstrpos(text,
+                  \ '\V' .. $"{escape(prompt_text, '\')}"))
             ->map((idx, match_info) => [results[idx], match_info[1],
             match_info[2]])
 
@@ -429,7 +430,9 @@ def ShowColorscheme(current_background: string)
   endif
 enddef
 
-def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: string)
+def ShowPromptPopup(results: list<string>,
+    search_type: string,
+    search_pattern: string)
   # This is the UI thing
   #
   var main_id_core_line = popup_getpos(main_id).core_line
@@ -469,7 +472,10 @@ def ShowPromptPopup(results: list<string>, search_type: string, search_pattern: 
 enddef
 
 # ----- MAIN -----
-def ShowPopup(title: string, results: list<string>, search_type: string, search_pattern: string = '')
+def ShowPopup(title: string,
+    results: list<string>,
+    search_type: string,
+    search_pattern: string = '')
   # This function is regarded as main function.
   InitScriptLocalVars()
   # Clean up the command line to avoid "Press Enter" otherwise the popups will
@@ -512,15 +518,18 @@ def ShowPopup(title: string, results: list<string>, search_type: string, search_
       show_preview = g:poptools_config['preview_file']
     endif
   elseif search_type == 'file_in_path'
-    if exists('g:poptools_config') && has_key(g:poptools_config, 'preview_file_in_path')
+    if exists('g:poptools_config')
+        && has_key(g:poptools_config, 'preview_file_in_path')
       show_preview = g:poptools_config['preview_file_in_path']
     endif
   elseif search_type == 'recent_files'
-    if exists('g:poptools_config') && has_key(g:poptools_config, 'preview_recent_files')
+    if exists('g:poptools_config')
+        && has_key(g:poptools_config, 'preview_recent_files')
       show_preview = g:poptools_config['preview_recent_files']
     endif
   elseif search_type == 'buffer'
-    if exists('g:poptools_config') && has_key(g:poptools_config, 'preview_buffers')
+    if exists('g:poptools_config')
+        && has_key(g:poptools_config, 'preview_buffers')
       show_preview = g:poptools_config['preview_buffers']
     endif
   elseif search_type == 'grep'

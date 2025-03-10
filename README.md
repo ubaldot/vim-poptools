@@ -100,7 +100,7 @@ take a look at `:h poptools.txt`.
 
 ## Some notes on files/patterns search
 
-`PoptoolsFindFile` and `PoptoolsFindInPath`
+### `PoptoolsFindFile` and `PoptoolsFindInPath`
 
 These commands take into account the setting of `:h 'wildignore'`,
 `:h 'wildoptions'` and `:h 'path'` options, so if you want to include/exclude
@@ -114,7 +114,7 @@ Hidden files are searched in non-hidden folders. To find files in a hidden
 folder, you must first `cd` into such a folder. For example, `cd ~/.vim`
 followed by `PopupFindFiles` will search files inside the `.vim` folder.
 
-`PoptoolsGrep`
+### `PoptoolsGrep`
 
 This command uses an external "grep" program and therefore it is not affected
 by the Vim options settings. The default "grep" commands are the following:
@@ -139,7 +139,7 @@ user input.
 You can also configure your own grep commands through the keys `grep_cmd_win`
 and `grep_cmd_nix` of the `g:poptools_config` dictionary and you can use the
 placeholders `{search_dir}, {items}` and `{what}`. For example, you could set
-the following
+the following:
 
 ```
 g:poptools_config['grep_cmd_win'] = 'powershell -NoProfile -ExecutionPolicy '
