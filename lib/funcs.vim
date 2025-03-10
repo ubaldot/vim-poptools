@@ -279,108 +279,113 @@ def PopupFilter(id: number,
   # You never know what the user can type...
   # echo "Pressed key: " .. key
   echo ''
-  if key == "\<CR>"
-    popup_close(main_id, getcurpos(main_id)[1])
-    ClosePopups()
-  elseif index(["\<Right>", "\<PageDown>"], key) != -1
-      win_execute(main_id, 'normal! ' .. maxheight .. "\<C-d>")
-  elseif index(["\<Left>", "\<PageUp>"], key) != -1
-      win_execute(main_id, 'normal! ' .. maxheight .. "\<C-u>")
-  elseif key == "\<Home>"
-      win_execute(main_id, "normal! gg")
-  elseif key == "\<End>"
-      win_execute(main_id, "normal! G")
-  elseif index(["\<tab>", "\<C-n>", "\<Down>", "\<ScrollWheelDown>"], key) != -1
-      var ln = getcurpos(main_id)[1]
-      win_execute(main_id, "normal! j")
-      if ln == getcurpos(main_id)[1]
-          win_execute(main_id, "normal! gg")
+  try
+    if key == "\<CR>"
+      popup_close(main_id, getcurpos(main_id)[1])
+      ClosePopups()
+    elseif index(["\<Right>", "\<PageDown>"], key) != -1
+        win_execute(main_id, 'normal! ' .. maxheight .. "\<C-d>")
+    elseif index(["\<Left>", "\<PageUp>"], key) != -1
+        win_execute(main_id, 'normal! ' .. maxheight .. "\<C-u>")
+    elseif key == "\<Home>"
+        win_execute(main_id, "normal! gg")
+    elseif key == "\<End>"
+        win_execute(main_id, "normal! G")
+    elseif index(["\<tab>", "\<C-n>", "\<Down>", "\<ScrollWheelDown>"], key) != -1
+        var ln = getcurpos(main_id)[1]
+        win_execute(main_id, "normal! j")
+        if ln == getcurpos(main_id)[1]
+            win_execute(main_id, "normal! gg")
+        endif
+    elseif index(["\<S-Tab>", "\<C-p>", "\<Up>", "\<ScrollWheelUp>"], key) != -1
+        var ln = getcurpos(main_id)[1]
+        win_execute(main_id, "normal! k")
+        if ln == getcurpos(main_id)[1]
+            win_execute(main_id, "normal! G")
+        endif
+    # The real deal: take a single, printable character
+    elseif key =~ '^\p$' || keytrans(key) ==# "<BS>" || key == "\<c-u>"
+      if key =~ '^\p$'
+        prompt_text ..= key
+      elseif keytrans(key) ==# "<BS>"
+        if len(prompt_text) > 0
+          prompt_text = prompt_text[: -2]
+        endif
+      elseif key == "\<c-u>"
+        prompt_text = ""
       endif
-  elseif index(["\<S-Tab>", "\<C-p>", "\<Up>", "\<ScrollWheelUp>"], key) != -1
-      var ln = getcurpos(main_id)[1]
-      win_execute(main_id, "normal! k")
-      if ln == getcurpos(main_id)[1]
-          win_execute(main_id, "normal! G")
+
+      popup_settext(prompt_id, $'{prompt_sign}{prompt_text}{prompt_cursor}')
+
+      # What you pass to popup_settext(main_id, ...) is a list of strings with
+      # text properties attached, e.g.
+      #
+      # [
+      #   { "text": "filename.txt",
+      #     "props": [ {"col": 2, "length": 1, "type": "FuzzyOldfiles"}, ... ]
+      #   },
+      #   { "text": "another_file.txt",
+      #     "props": [ {"col": 1, "length": 1, "type": "FuzzyOldfiles"}, ... ]
+      #   },
+      #   ...
+      # ]
+      #
+      var filtered_results_full = []
+      var filtered_results: list<dict<any>>
+
+      if !empty(prompt_text)
+        if fuzzy_search
+          filtered_results_full = results->matchfuzzypos(prompt_text)
+          var pos = filtered_results_full[1]
+          filtered_results = filtered_results_full[0]
+            ->map((ii, match) => ({
+              text: match,
+              props: pos[ii]->copy()->map((_, col) => ({
+                col: col + 1,
+                length: 1,
+                type: 'PopupToolsMatched'
+              }))}))
+        else
+          filtered_results_full = copy(results)
+            ->map((_, text) => matchstrpos(text, '\V' .. $"{escape(prompt_text, '\')}"))
+            ->map((idx, match_info) => [results[idx], match_info[1],
+            match_info[2]])
+
+          filtered_results = copy(filtered_results_full)
+            ->map((_, val) => ({
+              text: val[0],
+              props: val[1] >= 0 && val[2] >= 0
+                ? [{
+                  type: 'PopupToolsMatched',
+                  col: val[1] + 1,
+                  end_col: val[2] + 1
+                }]
+                : []
+            }))
+            ->filter("!empty(v:val.props)")
+        endif
       endif
-  # The real deal: take a single, printable character
-  elseif key =~ '^\p$' || keytrans(key) ==# "<BS>" || key == "\<c-u>"
-    if key =~ '^\p$'
-      prompt_text ..= key
-    elseif keytrans(key) ==# "<BS>"
-      if len(prompt_text) > 0
-        prompt_text = prompt_text[: -2]
-      endif
-    elseif key == "\<c-u>"
-      prompt_text = ""
-    endif
 
-    popup_settext(prompt_id, $'{prompt_sign}{prompt_text}{prompt_cursor}')
+      var opts = popup_getoptions(prompt_id)
+      var num_hits = !empty(filtered_results)
+        ? len(filtered_results)
+        : len(results)
+      var base_title = trim(opts.title->matchstr('.*\ze('))
+      opts.title = $' {base_title} ({num_hits}) '
+      popup_setoptions(prompt_id, opts)
 
-    # What you pass to popup_settext(main_id, ...) is a list of strings with
-    # text properties attached, e.g.
-    #
-    # [
-    #   { "text": "filename.txt",
-    #     "props": [ {"col": 2, "length": 1, "type": "FuzzyOldfiles"}, ... ]
-    #   },
-    #   { "text": "another_file.txt",
-    #     "props": [ {"col": 1, "length": 1, "type": "FuzzyOldfiles"}, ... ]
-    #   },
-    #   ...
-    # ]
-    #
-    var filtered_results_full = []
-    var filtered_results: list<dict<any>>
-
-    if !empty(prompt_text)
-      if fuzzy_search
-        filtered_results_full = results->matchfuzzypos(prompt_text)
-        var pos = filtered_results_full[1]
-        filtered_results = filtered_results_full[0]
-          ->map((ii, match) => ({
-            text: match,
-            props: pos[ii]->copy()->map((_, col) => ({
-              col: col + 1,
-              length: 1,
-              type: 'PopupToolsMatched'
-            }))}))
+      if !empty(prompt_text)
+        popup_settext(main_id, filtered_results)
       else
-        filtered_results_full = copy(results)
-          ->map((_, text) => matchstrpos(text, $'\V{prompt_text}'))
-          ->map((idx, match_info) => [results[idx], match_info[1],
-          match_info[2]])
-
-        filtered_results = copy(filtered_results_full)
-          ->map((_, val) => ({
-            text: val[0],
-            props: val[1] >= 0 && val[2] >= 0
-              ? [{
-                type: 'PopupToolsMatched',
-                col: val[1] + 1,
-                end_col: val[2] + 1
-              }]
-              : []
-          }))
-          ->filter("!empty(v:val.props)")
+        popup_settext(main_id, results)
       endif
-    endif
-
-    var opts = popup_getoptions(prompt_id)
-    var num_hits = !empty(filtered_results)
-      ? len(filtered_results)
-      : len(results)
-    var base_title = trim(opts.title->matchstr('.*\ze('))
-    opts.title = $' {base_title} ({num_hits}) '
-    popup_setoptions(prompt_id, opts)
-
-    if !empty(prompt_text)
-      popup_settext(main_id, filtered_results)
     else
-      popup_settext(main_id, results)
+      Echowarn('Unknown key')
     endif
-  else
-    Echowarn('Unknown key')
-  endif
+  catch
+    ClosePopups()
+    Echoerr('Internal error')
+  endtry
 
   if preview_id != -1
     UpdateFilePreview(search_type, search_pattern)
