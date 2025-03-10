@@ -32,7 +32,7 @@ The commands are self-explanatory:
 ```
 :PoptoolsFindFile
 :PoptoolsFindFileInPath # Takes into account the setting of :h 'path'.
-:PoptoolsFindDir
+:PoptoolsFindDir # Search from the current directory downwards
 :PoptoolsBuffers
 :PoptoolsRecentFiles
 :PoptoolsCmdHistory

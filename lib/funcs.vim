@@ -595,7 +595,7 @@ export def FindFile(search_type: string)
   endif
 
   # Main
-  what = input($"'{fnamemodify(getcwd(), ':~')}'\nFile name to search ('enter' for all): ")
+  what = input($"current folder: '{fnamemodify(getcwd(), ':~')}'\nFile name to search ('enter' for all): ")
   var hidden = what[0] == '.' ? '' : '*'
 
   search_dir = '.'
@@ -632,11 +632,11 @@ enddef
 
 export def FindDir()
   # Main
-  var what = input($"'{fnamemodify(getcwd(), ':~')}'\nDir name to search ('enter' for all): ")
+  what = input($"current folder: '{fnamemodify(getcwd(), ':~')}'\n
+        \Folder name to search ('enter' for all): ")
   var hidden = what[0] == '.' ? '' : '*'
 
-  var results = getcompletion($'**/{hidden}{what}',
-        \  'dir', true)
+  var results = getcompletion($'**/{hidden}{what}', 'dir', true)
 
   if empty(results)
     echo $"'{what}' pattern not found!"
@@ -659,21 +659,22 @@ export def Vimgrep()
   endif
 
   # Main
-  what = input($"'{fnamemodify(getcwd(), ':~')}'\n String to find: ")
+  what = input($"current folder: '{fnamemodify(getcwd(), ':~')}'\n
+        \String to find: ")
   if empty(what)
     return
   endif
 
-  items = input($"\n in which files ('empty' for current file,
+  items = input($"\nin which files ('empty' for current file,
         \  '*' for all files): ", '*.')
   if empty(items)
     items = '%'
     search_dir = ''
   else
-    search_dir = input($"\n in which folder(s): ", './**')
+    search_dir = input($"\nin which folder(s): ", './**')
   endif
 
-  var vimgrep_options = input($"\n Vimgrep options (empty = 'gj'): ", 'gj')
+  var vimgrep_options = input($"\nVimgrep options (g = every match, f = fuzzy): ", 'g')
   if empty(vimgrep_options)
     return
   endif
@@ -723,7 +724,6 @@ enddef
 
 export def GrepInBuffer(what_user: string = '')
   # The format is like grep, i.e. filename:linenumber:
-  var what = ''
   if empty(what_user)
     GrepInBufferHighlight()
     what = input("Find in current buffer: ")
@@ -762,7 +762,8 @@ export def Grep()
 
   # Main
   GrepInBufferHighlight()
-  what = input($"'{fnamemodify(getcwd(), ':~')}'\n String to find: ")
+  what = input($"current folder: '{fnamemodify(getcwd(), ':~')}'\n
+        \String to find: ")
   if empty(what)
     GrepInBufferHighlightClear()
     return
@@ -772,10 +773,10 @@ export def Grep()
   items = expand('%:t')
   search_dir = expand('%:h')
 
-  items = input($"\n in which files ('*' for all files): ", '*.')
+  items = input($"\nin which files ('*' for all files): ", '*.')
   var current_wildmenu = &wildmenu
   set nowildmenu
-  search_dir = input($"\n in which folder (you can use 'tab'): ",
+  search_dir = input($"\nin which folder (you can use 'tab'): ",
         \  './', 'dir')
   if empty(search_dir) || search_dir == './'
     search_dir = getcwd()
