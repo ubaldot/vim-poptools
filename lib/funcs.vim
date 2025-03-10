@@ -570,7 +570,7 @@ def ShowPopup(title: string,
     PopupCallback = PopupCallbackDir
   elseif search_type == 'history'
     PopupCallback = PopupCallbackHistory
-  elseif search_type == 'grep'
+  elseif  index(['grep', 'vimgrep'], search_type) != -1
     PopupCallback = PopupCallbackGrep
   elseif search_type == 'color'
     PopupCallback = PopupCallbackColorscheme
@@ -595,24 +595,24 @@ export def FindFile(search_type: string)
   endif
 
   # Main
-  var what = input($"'{fnamemodify(getcwd(), ':~')}'\nFile name to search ('enter' for all): ")
+  what = input($"'{fnamemodify(getcwd(), ':~')}'\nFile name to search ('enter' for all): ")
   var hidden = what[0] == '.' ? '' : '*'
 
-  var search_dir = ''
-  if (search_type == 'file' || search_type == 'file_in_path')
+  search_dir = '.'
+  if (search_type == 'file')
     var current_wildmenu = &wildmenu
     set nowildmenu
-    search_dir = input($"\n in which folder (you can use 'tab'): ", './', 'dir')
+    search_dir = input($"\nin which folder (you can also use 'tab'): ", './**', 'dir')
     if empty(search_dir) || search_dir == './'
       search_dir = getcwd()
     endif
     &wildmenu = current_wildmenu
   endif
-  var results = getcompletion($'{search_dir}/**/{hidden}{what}',
+  var results = getcompletion($'{search_dir}/{hidden}{what}',
         \  search_type, true)
+  # echo "\n[poptools] If the search takes too long hit CTRL-C few times and try to
+  #       \ narrow down your search."
 
-  echo "[poptools] If the search takes too long hit CTRL-C few times and try to
-        \ narrow down your search."
   if empty(results)
     echo $"'{what}' pattern not found!"
   else
@@ -670,7 +670,7 @@ export def Vimgrep()
     items = '%'
     search_dir = ''
   else
-    search_dir = input($"\n in which folder(s): ", './**/')
+    search_dir = input($"\n in which folder(s): ", './**')
   endif
 
   var vimgrep_options = input($"\n Vimgrep options (empty = 'gj'): ", 'gj')
@@ -678,10 +678,14 @@ export def Vimgrep()
     return
   endif
 
-  var cmd = $'vimgrep /{what}/{vimgrep_options} {search_dir}{items}'
+  var cmd = $'vimgrep /{what}/{vimgrep_options} {search_dir}/{items}'
   Echowarn(cmd)
   exe cmd
-  copen
+  var qf_results = getqflist()
+  var results = qf_results
+    ->mapnew((_, val) => ($'{bufname(val.bufnr)}:{val.lnum}:{val.text}'))
+  var title = $" {fnamemodify(getcwd(), ':~')} - Search results for '{what}': "
+  ShowPopup(title, results, 'vimgrep', what)
 enddef
 
 # TODO: These two functions are used to mimic the in_search feature for
