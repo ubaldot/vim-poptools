@@ -133,10 +133,8 @@ by the Vim options settings. The default "grep" commands are the following:
 where the values of `{what}`,`{files}` and `{search_dir}` are replaced by
 user input.
 
-> [CAUTION!]
->
+> [!CAUTION]
 > What follows may not work super-well.
->
 
 You can also configure your own grep commands through the keys `grep_cmd_win`
 and `grep_cmd_nix` of the `g:poptools_config` dictionary and you can use the
