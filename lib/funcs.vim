@@ -79,7 +79,7 @@ def RestoreCursor()
     endif
 enddef
 
-# ----- Callback functions
+# ----- Callback functions ------------------------
 def PopupCallbackGrep(id: number, idx: number)
   if idx > 0
     popup_close(prompt_id, -1)
@@ -99,11 +99,17 @@ def PopupCallbackGrep(id: number, idx: number)
     var line = selection->matchstr(':\zs\d*\ze:')
 
     var path = split(popup_getoptions(id).title)[0]
-    if getcwd() == path
-      exe $'edit {path}/{file}'
-    else
-      exe $'edit {file}'
-    endif
+    try
+      if getcwd() == path
+        exe $'edit {path}/{file}'
+      else
+        exe $'edit {file}'
+      endif
+    catch
+      ClosePopups()
+      Echoerr($'Cannot open {file}')
+    endtry
+
     cursor(str2nr(line), 1)
     RestoreCursor()
   endif
@@ -165,7 +171,8 @@ def UpdateFilePreview(search_type: string, search_pattern: string)
   #   ({firstline} - 1) -First ({lastline} - {firstline} + 1)"')
   #   : systemlist($'sed -n "{firstline},{lastline}p" {filename}')
   #
-  # For the syntax highlight, you may use the 'GetFiletypeByFilename()' function
+  # For the syntax highlight, you may use the 'GetFiletypeByFilename()'
+  # function, which is now in unused.vim
   #
   # Parse the highlighted line on the main popup
   var idx = line('.', main_id)
@@ -203,6 +210,7 @@ def UpdateFilePreview(search_type: string, search_pattern: string)
 
     # Set options
     win_execute(preview_id, $'setlocal number')
+    # TODO: the wrap thing may be selectable through g:poptools_config?
     # win_execute(preview_id, '&wrap = false')
 
     # clean the preview
@@ -284,9 +292,10 @@ def PopupFilter(id: number,
     return true
   endif
 
-  # You never know what the user can type...
+  # For debugging
   # echo "Pressed key: " .. key
   echo ''
+  # You never know what the user can type...
   try
     if key == "\<CR>"
       popup_close(main_id, getcurpos(main_id)[1])
@@ -330,10 +339,10 @@ def PopupFilter(id: number,
       #
       # [
       #   { "text": "filename.txt",
-      #     "props": [ {"col": 2, "length": 1, "type": "FuzzyOldfiles"}, ... ]
+      #     "props": [ {"col": 2, "length": 1, "type": "PopupToolsMatched"}, ... ]
       #   },
       #   { "text": "another_file.txt",
-      #     "props": [ {"col": 1, "length": 1, "type": "FuzzyOldfiles"}, ... ]
+      #     "props": [ {"col": 1, "length": 1, "type": "PopupToolsMatched"}, ... ]
       #   },
       #   ...
       # ]
@@ -797,7 +806,6 @@ export def Grep()
       'g'))->filter('v:val != ""')
 
   else
-    # echom cmd_nix
     Echowarn(cmd_nix)
     results = systemlist(cmd_nix)
   endif
