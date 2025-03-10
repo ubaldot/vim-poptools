@@ -155,7 +155,7 @@ The return format of the user-defined search commands shall start with
 However, if things crash, you can use `:PoptoolsKill` to close all the
 popuptools popup windows.
 
-### Folder search
+### `PopupFindDir`
 
 To find hidden folders with `PopupFindDir` command, just add a `.` in front of
 the search pattern, e.g. `.git*`. That will return e.g. `.git/, .github/`,
