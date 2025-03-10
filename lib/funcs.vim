@@ -659,22 +659,23 @@ export def Vimgrep()
   endif
 
   # Main
-  var what = input($"'{fnamemodify(getcwd(), ':~')}'\n String to find: ")
+  what = input($"'{fnamemodify(getcwd(), ':~')}'\n String to find: ")
   if empty(what)
     return
   endif
 
-  var files = input($"\n in which files ('empty' for current file,
+  items = input($"\n in which files ('empty' for current file,
         \  '*' for all files): ", '*.')
-  if empty(files)
-    files = '%'
+  if empty(items)
+    items = '%'
+    search_dir = ''
   else
-    files = $'**/{files}'
+    search_dir = input($"\n in which dir: ", './**/')
   endif
 
   var vimgrep_options = input($"\n Vimgrep options (empty = 'gj'): ", 'gj')
 
-  var cmd = $'vimgrep /{what}/{vimgrep_options} {files}'
+  var cmd = $'vimgrep /{what}/{vimgrep_options} {search_dir}{items}'
   redraw
   Echowarn(cmd)
   exe cmd
