@@ -346,7 +346,7 @@ def PopupFilter(id: number,
             }))}))
       else
         filtered_results_full = copy(results)
-          ->map((_, text) => matchstrpos(text, prompt_text))
+          ->map((_, text) => matchstrpos(text, $'\V{prompt_text}'))
           ->map((idx, match_info) => [results[idx], match_info[1],
           match_info[2]])
 
@@ -373,7 +373,7 @@ def PopupFilter(id: number,
     opts.title = $' {base_title} ({num_hits}) '
     popup_setoptions(prompt_id, opts)
 
-    if !empty(filtered_results)
+    if !empty(prompt_text)
       popup_settext(main_id, filtered_results)
     else
       popup_settext(main_id, results)
