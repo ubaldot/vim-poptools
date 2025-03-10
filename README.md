@@ -150,11 +150,10 @@ g:poptools_config['grep_cmd_win'] = 'powershell -NoProfile -ExecutionPolicy '
 The "grep" command sent to the shell is displayed in the command line and it
 can be retrieved it with `:messages`.
 
-> [!IMPORTANT]
-> The return format of the user-defined search commands shall start with
-> `filename:line_number:line_content` otherwise the results cannot be parsed.
-> However, if things crash, you can use `:PoptoolsKill` to close all the
-> popuptools popup windows.
+The return format of the user-defined search commands shall start with
+`filename:line_number:line_content` otherwise the results cannot be parsed.
+However, if things crash, you can use `:PoptoolsKill` to close all the
+popuptools popup windows.
 
 ### Folder search
 
