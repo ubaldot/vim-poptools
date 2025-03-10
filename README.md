@@ -153,7 +153,7 @@ can be retrieved it with `:messages`.
 The return format of the user-defined search commands shall start with
 `filename:line_number:line_content` otherwise the results cannot be parsed.
 However, if things crash, you can use `:PoptoolsKill` to close all the
-popuptools popup windows.
+Poptools popup windows.
 
 ### `PopupFindDir`
 
