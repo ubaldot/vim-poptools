@@ -590,7 +590,7 @@ export def FindFile(search_type: string)
   # Guard
   if (search_type == 'file' || search_type == 'file_in_path')
         \  && getcwd() == expand('~')
-    Echoerr("You are in your home directory. Too many results.")
+    Echoerr("You are in your home folder. Too many results.")
     return
   endif
 
@@ -602,7 +602,7 @@ export def FindFile(search_type: string)
   if (search_type == 'file' || search_type == 'file_in_path')
     var current_wildmenu = &wildmenu
     set nowildmenu
-    search_dir = input($"\n in which directory (you can use 'tab'): ", './', 'dir')
+    search_dir = input($"\n in which folder (you can use 'tab'): ", './', 'dir')
     if empty(search_dir) || search_dir == './'
       search_dir = getcwd()
     endif
@@ -654,7 +654,7 @@ enddef
 export def Vimgrep()
   # Guard
   if getcwd() == expand('~')
-    Echoerr("You are in your home directory. Too many results.")
+    Echoerr("You are in your home folder. Too many results.")
     return
   endif
 
@@ -670,13 +670,15 @@ export def Vimgrep()
     items = '%'
     search_dir = ''
   else
-    search_dir = input($"\n in which dir: ", './**/')
+    search_dir = input($"\n in which folder(s): ", './**/')
   endif
 
   var vimgrep_options = input($"\n Vimgrep options (empty = 'gj'): ", 'gj')
+  if empty(vimgrep_options)
+    return
+  endif
 
   var cmd = $'vimgrep /{what}/{vimgrep_options} {search_dir}{items}'
-  redraw
   Echowarn(cmd)
   exe cmd
   copen
@@ -750,7 +752,7 @@ enddef
 export def Grep()
   # Guard
   if getcwd() == expand('~')
-    Echoerr("You are in your home directory. Too many results.")
+    Echoerr("You are in your home folder. Too many results.")
     return
   endif
 
@@ -769,7 +771,7 @@ export def Grep()
   items = input($"\n in which files ('*' for all files): ", '*.')
   var current_wildmenu = &wildmenu
   set nowildmenu
-  search_dir = input($"\n in which directory (you can use 'tab'): ",
+  search_dir = input($"\n in which folder (you can use 'tab'): ",
         \  './', 'dir')
   if empty(search_dir) || search_dir == './'
     search_dir = getcwd()
