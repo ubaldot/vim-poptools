@@ -455,6 +455,9 @@ enddef
 def ShowPopup(title: string, results: list<string>, search_type: string, search_pattern: string = '')
   # This function is regarded as main function.
   InitScriptLocalVars()
+  # Clean up the command line to avoid "Press Enter" otherwise the popups will
+  # not show up
+  redraw
 
   # For some reason you get ^@ (=newline)
   var current_colorscheme = execute('colorscheme')->substitute('\n', '', 'g')
@@ -582,9 +585,8 @@ export def FindFile(search_type: string)
   var results = getcompletion($'{search_dir}/**/{hidden}{what}',
         \  search_type, true)
 
-  redraw
-  # echo "If the search takes too long hit CTRL-C few times and try to
-  #       \ narrow down your search."
+  echo "[poptools] If the search takes too long hit CTRL-C few times and try to
+        \ narrow down your search."
   if empty(results)
     echo $"'{what}' pattern not found!"
   else
@@ -644,11 +646,11 @@ export def Vimgrep()
     files = $'**/{files}'
   endif
 
-  var vimgrep_options = input($" Vimgrep options (empty = 'gj'): ", 'gj')
+  var vimgrep_options = input($"\n Vimgrep options (empty = 'gj'): ", 'gj')
 
   var cmd = $'vimgrep /{what}/{vimgrep_options} {files}'
   redraw
-  echo cmd
+  Echowarn(cmd)
   exe cmd
   copen
 enddef
@@ -672,7 +674,7 @@ def GrepInBufferHighlight()
       match_id = matchadd('IncSearch', what_to_match)
       # Highlight all the matches instead or the current line
       # match_id = matchadd('Search', getcmdline())
-      redraw!
+      redraw
     }
     autocmd CmdlineLeave @ if match_id > 0 | matchdelete(match_id) | match_id = 0 | endif
   augroup END
@@ -761,11 +763,21 @@ export def Grep()
   # /C:{shellescape(what)} /N /S {files} | findstr /V /R "^\..*\\\\"'
   var cmd_nix_default = $'grep -nrH --include="{files}" "{what}" {search_dir}'
 
-  # TODO: fix this crap! User cannot decide commands!
-  var cmd_win = get(g:poptools_config, 'grep_cmd_win', cmd_win_default)
-  var cmd_nix = get(g:poptools_config, 'grep_cmd_nix', cmd_nix_default)
+  var cmd_win = cmd_win_default
+  if exists('g:poptools_config') && has_key(g:poptools_config, 'grep_cmd_win')
+    var tmp = printf("$'%s'", g:poptools_config['grep_cmd_win'])
+    # echom "\r\nStringa: " .. tmp
+    # cmd_win = eval(tmp)
 
-  # clean up the command-line
+    cmd_win = eval('$"' .. g:poptools_config['grep_cmd_win'] .. '"')
+  endif
+
+  var cmd_nix = cmd_nix_default
+  if exists('g:poptools_config') && has_key(g:poptools_config, 'grep_cmd_nix')
+    cmd_nix = eval('$"' .. g:poptools_config['grep_cmd_nix'] .. '"')
+  endif
+
+  # clean up the command-line: needed!
   redraw
 
   # Get results
@@ -774,12 +786,13 @@ export def Grep()
     # In windows we get rid of the ^M and we filter eventual blank lines
     # results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '',
     # 'g'))->filter('v:val != ""')
-    echom cmd_win
+    Echowarn(cmd_win)
     results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '',
       'g'))->filter('v:val != ""')
 
   else
-    echom cmd_nix
+    # echom cmd_nix
+    Echowarn(cmd_nix)
     results = systemlist(cmd_nix)
   endif
 
