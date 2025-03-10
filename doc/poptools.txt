@@ -97,6 +97,10 @@ filling it with he various keys.
                           Default:
                           `grep -nrH --include="{items}" "{what}" {search_dir}`
 
+
+The "grep" command sent to the shell is displayed in the command line and it
+can be retrieved it with `:messages`.
+
 Note: the return format of the user-defined search commands shall be of the
 form `filename:line_number:line_content` otherwise the results cannot be parsed.
 

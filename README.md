@@ -136,6 +136,9 @@ the following
 g:poptools_config['grep_cmd_win'] = 'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {items}"'
 ```
 
+The "grep" command sent to the shell is displayed in the command line and it
+can be retrieved it with `:messages`.
+
 > [!IMPORTANT]
 > The return format of the user-defined search commands shall start with
 > `filename:line_number:line_content` otherwise the results cannot be parsed.
