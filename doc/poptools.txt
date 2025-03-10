@@ -89,6 +89,16 @@ filling it with he various keys.
        "preview_syntax"   Set to `true` if you want syntax highlighting in the
                           preview window. Note that syntax highlighting may
                           slow down the user-experience. Default `true`.
+       "grep_cmd_win"     Command used to perform search in Windows.
+                          Default: `'powershell -NoProfile -ExecutionPolicy
+                          \ Bypass -Command "cd {search_dir};findstr
+                          \ /C:{shellescape(what)} /N /S {items}"'`
+       "grep_cmd_nix"     Command used to perform search in *nix systems.
+                          Default:
+                          `grep -nrH --include="{items}" "{what}" {search_dir}`
+
+Note: the return format of the user-defined search commands shall be of the
+form `filename:line_number:line_content` otherwise the results cannot be parsed.
 
 ==============================================================================
 LICENSE                                            *poptools-license*

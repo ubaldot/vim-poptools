@@ -119,24 +119,26 @@ followed by `PopupFindFiles` will search files inside the `.vim` folder.
 This command uses an external "grep" program and therefore it is not affected
 by the Vim options settings. The default "grep" commands are the following:
 
-<!-- cmd_win_default = $'cmd.exe /c cd {shellescape(getcwd())} && findstr /C:{shellescape(what)} /N /S {files} | findstr /V /R "^\..*\\\\"' -->
-
 ```
-  cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass -Command "for /R \"{search_dir}\" %f in ({files}) do @findstr /C:\"{what}\" /N \"%f\""' # Not working yet
-  cmd_nix_default = $'grep -nrH --include="{files}" "{what}" {search_dir}'
+  cmd_win_default = 'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {items}"'
+  cmd_nix_default = 'grep -nrH --include="{items}" "{what}" {search_dir}'
 ```
 
 where the values of `{what}`,`{files}` and `{search_dir}` are replaced by
 user input.
 
-<!-- You can override them by setting `g:poptools_config['cmd_win']` and -->
-<!-- `g:poptools_config['cmd_nix']`, respectively. -->
+You can also configure your own grep commands through the keys `grep_cmd_win`
+and `grep_cmd_nix` of the `g:poptools_config` dictionary and you can use the
+placeholders `{search_dir}, {items}` and `{what}`. For example, you could set
+the following
 
-<!-- In such an overriding, you can use the `{what}`, `{files}`, and `{search_dir}` -->
-<!-- placeholders to specify the string to search (e.g. `foo`), the files pattern -->
-<!-- (e.g. `*.vim`) and the search folder (e.g. `~/myproject`), respectively. The -->
-<!-- values that you will be prompted to insert will be placed into those -->
-<!-- placeholders. -->
+```
+g:poptools_config['grep_cmd_win'] = 'powershell -NoProfile -ExecutionPolicy Bypass -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {items}"'
+```
+
+> [!IMPORTANT]
+> The return format of the user-defined search commands shall start with
+> `filename:line_number:line_content` otherwise the results cannot be parsed.
 
 ### Folder search
 

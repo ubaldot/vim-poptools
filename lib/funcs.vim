@@ -23,6 +23,10 @@ var prompt_text: string
 var fuzzy_search: bool
 var preview_syntax: bool
 
+var what: string
+var items: string
+var search_dir: string
+
 # Hide cursor when operating in the popups
 var gui_cursor: list<dict<any>>
 
@@ -46,6 +50,10 @@ def InitScriptLocalVars()
   prompt_cursor = '▏'
   prompt_sign = '> '
   prompt_text = ''
+
+  what = ''
+  items = ''
+  search_dir = ''
 
   if exists('g:poptools_config') && has_key(g:poptools_config, 'preview_syntax')
     preview_syntax = g:poptools_config['preview_syntax']
@@ -729,17 +737,17 @@ export def Grep()
 
   # Main
   GrepInBufferHighlight()
-  var what = input($"'{fnamemodify(getcwd(), ':~')}'\n String to find: ")
+  what = input($"'{fnamemodify(getcwd(), ':~')}'\n String to find: ")
   if empty(what)
     GrepInBufferHighlightClear()
     return
   endif
   GrepInBufferHighlightClear()
 
-  var files = expand('%:t')
-  var search_dir = expand('%:h')
+  items = expand('%:t')
+  search_dir = expand('%:h')
 
-  files = input($"\n in which files ('*' for all files): ", '*.')
+  items = input($"\n in which files ('*' for all files): ", '*.')
   var current_wildmenu = &wildmenu
   set nowildmenu
   search_dir = input($"\n in which directory (you can use 'tab'): ",
@@ -752,29 +760,27 @@ export def Grep()
 
   # External search command definitions
   var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass
-        \ -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {files}"'
+        \ -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S {items}"'
   # var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass
-  #       \  -Command "for /R \"{search_dir}\" %f in ({files}) do @findstr /C:\"{what}\" /N \"%f\""'
+  #       \  -Command "for /R \"{search_dir}\" %f in ({items}) do @findstr /C:\"{what}\" /N \"%f\""'
   # var cmd_win_default = $'powershell -NoProfile -ExecutionPolicy Bypass
   # -Command "cd {search_dir};findstr /C:{shellescape(what)} /N /S
-  #  {files}|findstr /V /R \"^\\..*\\\\\""'
+  #  {items}|findstr /V /R \"^\\..*\\\\\""'
   #  The following is faster because it uses cmd.exe
   # var cmd_win_default = $'cmd.exe /c cd {shellescape(search_dir)} && findstr
-  # /C:{shellescape(what)} /N /S {files} | findstr /V /R "^\..*\\\\"'
-  var cmd_nix_default = $'grep -nrH --include="{files}" "{what}" {search_dir}'
+  # /C:{shellescape(what)} /N /S {items} | findstr /V /R "^\..*\\\\"'
+  var cmd_nix_default = $'grep -nrH --include="{items}" "{what}" {search_dir}'
 
   var cmd_win = cmd_win_default
   if exists('g:poptools_config') && has_key(g:poptools_config, 'grep_cmd_win')
     var tmp = printf("$'%s'", g:poptools_config['grep_cmd_win'])
-    # echom "\r\nStringa: " .. tmp
-    # cmd_win = eval(tmp)
-
-    cmd_win = eval('$"' .. g:poptools_config['grep_cmd_win'] .. '"')
+    cmd_win = eval(tmp)
   endif
 
   var cmd_nix = cmd_nix_default
   if exists('g:poptools_config') && has_key(g:poptools_config, 'grep_cmd_nix')
-    cmd_nix = eval('$"' .. g:poptools_config['grep_cmd_nix'] .. '"')
+    var tmp = printf("$'%s'", g:poptools_config['grep_cmd_nix'])
+    cmd_nix = eval(tmp)
   endif
 
   # clean up the command-line: needed!
@@ -800,7 +806,7 @@ export def Grep()
   # reconstruct the full path filename in the Callbacks and the show preview
   # mechanism
   var title = $" {fnamemodify(getcwd(), ':~')}
-        \  - Grep results for '{what}' in '{files}': "
+        \  - Grep results for '{what}' in '{items}': "
   if !empty(results)
     # Results from grep are given in the form path/to/file.ext:num: and we
     # have to extract only the filename from there
