@@ -791,17 +791,17 @@ export def Grep()
   if exists('g:poptools_config') && has_key(g:poptools_config, 'grep_cmd_win')
     var search_dir_escaped = escape(search_dir, '\')
     cmd_win = g:poptools_config['grep_cmd_win']
-      ->substitute("{search_dir}", $"{search_dir_escaped}", '')
-      ->substitute("{items}", items, '')
-      ->substitute("{what}", $"{what}", '')
+      ->substitute("{search_dir}", $"{search_dir_escaped}", 'g')
+      ->substitute("{items}", items, 'g')
+      ->substitute("{what}", $"{what}", 'g')
   endif
 
   var cmd_nix = cmd_nix_default
   if exists('g:poptools_config') && has_key(g:poptools_config, 'grep_cmd_nix')
     cmd_nix = g:poptools_config['grep_cmd_nix']
-      ->substitute("{search_dir}", search_dir, '')
-      ->substitute("{items}", items, '')
-      ->substitute("{what}", what, '')
+      ->substitute("{search_dir}", search_dir, 'g')
+      ->substitute("{items}", items, 'g')
+      ->substitute("{what}", what, 'g')
   endif
 
   # clean up the command-line: needed!
