@@ -279,7 +279,7 @@ def PopupFilter(id: number,
     current_background: string,
     ): bool
 
-  if index(['file', 'file_in_path', 'grep'], search_type) != -1
+  if index(['file', 'file_in_path', 'grep', 'vimgrep'], search_type) != -1
     # Save for last search
     last_results = getbufline(winbufnr(main_id), 1, '$')
     last_title = popup_getoptions(main_id).title
@@ -681,7 +681,12 @@ export def Vimgrep()
     items = '%'
     search_dir = ''
   else
-    search_dir = input($"\nin which folder(s): ", './**')
+    # vimgrep does not like non-escaped spaces. We also have to remove the
+    # final \ or / in case the user type a folder with a final / or \,
+    # e.g. 'Saved Games\' shall be replaced with 'Saved\ Games'
+    search_dir = input($"\nin which folder(s) (you can use 'tab'): ", './**', 'dir')
+                 ->escape(' ')
+                 ->substitute('\v(\\|/)$', '', '')
   endif
 
   var vimgrep_options = input($"\nVimgrep options (g = every match, f = fuzzy): ", 'g')
@@ -689,12 +694,14 @@ export def Vimgrep()
     return
   endif
 
-  var cmd = $'vimgrep /{what}/{vimgrep_options} {search_dir}/{items}'
+  # j is to avoid jumping on the first match
+  var cmd = $'vimgrep /{what}/j{vimgrep_options} {search_dir}/{items}'
+  echom getqflist({'title': 0}).title
   # Echowarn(cmd)
   exe cmd
   var qf_results = getqflist()
   var results = qf_results
-    ->mapnew((_, val) => ($'{bufname(val.bufnr)}:{val.lnum}:{val.text}'))
+    ->mapnew((_, val) => ($'{fnamemodify(bufname(val.bufnr), '.')}:{val.lnum}:{val.text}'))
   var title = $" {fnamemodify(getcwd(), ':~')} - Search results for '{what}': "
   ShowPopup(title, results, 'vimgrep', what)
 enddef
@@ -784,17 +791,22 @@ export def Grep()
   var current_wildmenu = &wildmenu
   set nowildmenu
   search_dir = input($"\nin which folder (you can use 'tab'): ",
-        \  './', 'dir')
+        \  './', 'dir')->substitute('\v(\\|/)$', '', '')
+  echom "UBA: " .. search_dir
   if empty(search_dir) || search_dir == './'
     search_dir = getcwd()
   endif
   &wildmenu = current_wildmenu
 
   # Windows default
-  var cmd_win_default =
-    'powershell -NoProfile -ExecutionPolicy Bypass -Command '
-      .. '"& {Set-Location -LiteralPath ''' .. search_dir .. '''; findstr /C:'''
-      .. what .. ''' /N /S ''' .. items .. '''}"'
+  # var cmd_win_default =
+  #   'powershell -NoProfile -ExecutionPolicy Bypass -Command '
+  #     .. '"& {Set-Location -LiteralPath ''' .. search_dir .. '''; findstr /C:'''
+  #     .. what .. ''' /N /S ''' .. items .. '''}"'
+
+  var tmp = fnamemodify($'{search_dir}\{items}', ':p')
+  var cmd_win_default = 'powershell -NoProfile -ExecutionPolicy Bypass -Command '
+  .. '"& { findstr /C:''' .. what .. ''' /N /S ''' .. tmp .. ''' }"'
 
   # *nix default
   var cmd_nix_default = $'grep -nrH --include="{items}" "{what}" {search_dir}'
@@ -834,7 +846,12 @@ export def Grep()
 
   var qf_results = getqflist()
   var results = qf_results
-    ->mapnew((_, val) => ($'{fnamemodify(bufname(val.bufnr), '~')}:{val.lnum}:{val.text}'))
+    ->mapnew((_, val) => ($'{fnamemodify(bufname(val.bufnr), 'p')}:{val.lnum}:{val.text}'))
+  # Ugly hack for Windows given that in the qf-list you have \User\ubaldot,
+  # i.e. the C: has gone.
+  if has('win32')
+    results->map((_, val) => ('C:' .. val))
+  endif
   var title = $" {fnamemodify(getcwd(), ':~')} - Search results for '{what}': "
   ShowPopup(title, results, 'grep', what)
 enddef
