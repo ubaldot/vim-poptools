@@ -122,15 +122,15 @@ filling it with he various keys.
        "grep_cmd_win"     Value of |grepprg| for Windows.
                           Default:
       >
-      'powershell -NoProfile -ExecutionPolicy Bypass -Command '
-      .. '"& {Set-Location -LiteralPath ''' .. search_dir .. '''; findstr /C:'''
-      .. what .. ''' /N /S ''' .. items .. '''}"
+              'powershell -NoProfile -ExecutionPolicy Bypass -Command '
+                .. '"& { findstr /C:''' .. what .. ''' /N /S '''
+                .. fnamemodify($'{search_dir}\{items}', ':p') .. ''' }"'
 <
 
-       "grep_cmd_nix"     Value of |grepprg| for *nix systems.
+        "grep_cmd_nix"     Value of |grepprg| for *nix systems.
                           Default:
       >
-             grep -nrH --include="{items}" "{what}" {search_dir}
+               grep -nrH --include="{items}" "{what}" {search_dir}
 <
 If you define your own |grepprg|, then the elements in the quickfix shall
 contain the buffer number, the line number and the text. You can verify it by

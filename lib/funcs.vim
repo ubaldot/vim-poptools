@@ -812,14 +812,11 @@ export def Grep()
   &wildmenu = current_wildmenu
 
   # Windows default
-  # var cmd_win_default =
-  #   'powershell -NoProfile -ExecutionPolicy Bypass -Command '
-  #     .. '"& {Set-Location -LiteralPath ''' .. search_dir .. '''; findstr /C:'''
-  #     .. what .. ''' /N /S ''' .. items .. '''}"'
 
   var tmp = fnamemodify($'{search_dir}\{items}', ':p')
   var cmd_win_default = 'powershell -NoProfile -ExecutionPolicy Bypass -Command '
-  .. '"& { findstr /C:''' .. what .. ''' /N /S ''' .. tmp .. ''' }"'
+  .. '"& { findstr /C:''' .. what .. ''' /N /S '''
+  .. fnamemodify($'{search_dir}\{items}', ':p') .. ''' }"'
 
   # *nix default
   var cmd_nix_default = $'grep -nrH --include="{items}" "{what}" {search_dir}'

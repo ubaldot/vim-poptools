@@ -142,9 +142,10 @@ placeholders `{search_dir}, {items}` and `{what}`. For example, you could set
 the following:
 
 ```
-g:poptools_config['grep_cmd_win'] = 'powershell -NoProfile -ExecutionPolicy '
-.. 'Bypass -Command "& {Set-Location -LiteralPath ''{search_dir}''; '
-.. 'findstr /C:''{what}'' /N /S {items}}"'
+g:poptools_config['grep_cmd_win'] =
+                'powershell -NoProfile -ExecutionPolicy Bypass -Command '
+                .. '"& { findstr /C:''' .. what .. ''' /N /S '''
+                .. fnamemodify($'{search_dir}\{items}', ':p') .. ''' }"'
 ```
 
 If you define your own `'grepprg'`, then the elements in the quickfix shall
