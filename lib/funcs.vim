@@ -19,6 +19,8 @@ var prompt_cursor: string
 var prompt_sign: string
 var prompt_text: string
 
+var saved_grepprg: string
+
 # User defined settings through g:poptools_config
 var fuzzy_search: bool
 var preview_syntax: bool
@@ -54,6 +56,8 @@ def InitScriptLocalVars()
   what = ''
   items = ''
   search_dir = ''
+
+  saved_grepprg = &grepprg
 
   if exists('g:poptools_config') && has_key(g:poptools_config, 'preview_syntax')
     preview_syntax = g:poptools_config['preview_syntax']
@@ -263,6 +267,7 @@ export def ClosePopups()
   popup_close(prompt_id, -1)
   RestoreCursor()
   prop_type_delete('PopupToolsMatched')
+  &grepprg = saved_grepprg
 enddef
 
 def PopupFilter(id: number,
@@ -813,35 +818,21 @@ export def Grep()
   redraw
 
   # Get results
-  var results = []
   if has('win32')
-    # In windows we get rid of the ^M and we filter eventual blank lines
-    # results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '',
-    # 'g'))->filter('v:val != ""')
     Echowarn(cmd_win)
-    results = systemlist(cmd_win)->map((_, val) => substitute(val, '\r', '',
-      'g'))->filter('v:val != ""')
-
+    &grepprg = cmd_win
+    grep!
   else
     Echowarn(cmd_nix)
-    results = systemlist(cmd_nix)
+    &grepprg = cmd_nix
+    grep!
   endif
 
-  # OBS: the 'title' MUST have filepath followed by \s because it is used to
-  # reconstruct the full path filename in the Callbacks and the show preview
-  # mechanism
-  var title = $" {fnamemodify(getcwd(), ':~')}
-        \  - Grep results for '{what}' in '{items}': "
-  if !empty(results)
-    # Results from grep are given in the form path/to/file.ext:num: and we
-    # have to extract only the filename from there
-    results ->map((_, val) => substitute(val, '^\S\{-}\ze:', (m) =>
-        fnamemodify(m[0], ':.'), 'g'))
-
-    ShowPopup(title, results, 'grep', what)
-  else
-    Echoerr($"\n pattern '{what}' not found!")
-  endif
+  var qf_results = getqflist()
+  var results = qf_results
+    ->mapnew((_, val) => ($'{fnamemodify(bufname(val.bufnr), '~')}:{val.lnum}:{val.text}'))
+  var title = $" {fnamemodify(getcwd(), ':~')} - Search results for '{what}': "
+  ShowPopup(title, results, 'grep', what)
 enddef
 
 export def Buffers()
