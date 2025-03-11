@@ -824,10 +824,12 @@ export def Grep()
     # Echowarn(cmd_win)
     &grepprg = cmd_win
     grep!
+    echom getqflist({'title': 0}).title
   else
     # Echowarn(cmd_nix)
     &grepprg = cmd_nix
     grep!
+    echom getqflist({'title': 0}).title
   endif
 
   var qf_results = getqflist()

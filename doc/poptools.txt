@@ -85,6 +85,8 @@ You can also configure your own |grepprg| command through the keys
 `grep_cmd_win` and `grep_cmd_nix` of the |g:poptools_config| dictionary and
 you can use the placeholders `{search_dir}, {items}` and `{what}`.
 
+The grep command sent to the shell can be retrieved through |:messages|.
+
 ==============================================================================
 CONFIGURATION                    *poptools-configuration* *g:poptools_config*
 
