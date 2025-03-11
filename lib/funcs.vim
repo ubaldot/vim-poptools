@@ -99,19 +99,20 @@ def PopupCallbackGrep(id: number, idx: number)
     #
     # OBS! You could use split(selection, ':') to separate filename from line
     # number, but what if a filename is 'foo:bar'?
-    var file = selection->matchstr('^\S\{-}\ze:')
-    var line = selection->matchstr(':\zs\d*\ze:')
+    var filename = selection->matchstr('^.*\ze:\d')
+    var line = selection->matchstr('^.\{-}:\zs\d*\ze:')
+
 
     var path = split(popup_getoptions(id).title)[0]
     try
       if getcwd() == path
-        exe $'edit {path}/{file}'
+        exe $'edit {path}/{filename}'
       else
-        exe $'edit {file}'
+        exe $'edit {filename}'
       endif
     catch
       ClosePopups()
-      Echoerr($'Cannot open {file}')
+      Echoerr($'Cannot open {filename}')
     endtry
 
     cursor(str2nr(line), 1)
@@ -183,9 +184,11 @@ def UpdateFilePreview(search_type: string, search_pattern: string)
 
   # This "if" is needed because the filter is called on <cr> anyways
   if idx > 0
+    # The main_id may contain 'filenames' or 'filenames:lines:text'
+    # var filename = index(['grep', 'vimgrep'], search_type) >= 0
     var filename = search_type !=# 'grep'
       ? getbufline(winbufnr(main_id), idx)[0]
-      : getbufline(winbufnr(main_id), idx)[0]->matchstr('^\S\{-}\ze:')
+      : getbufline(winbufnr(main_id), idx)[0]->matchstr('^.*\ze:\d')
 
     var line_nr = search_type !=# 'grep'
       ? popup_height / 2
@@ -195,7 +198,7 @@ def UpdateFilePreview(search_type: string, search_pattern: string)
     # However, when showing the preview or during the callback, it is safer to
     # have the fullname. The path is in the popup title.
     # In case of Buffers or Recent files, that is not needed
-    if index(['file', 'file_in_path', 'grep'], search_type) != -1
+    if index(['file', 'file_in_path', 'grep', 'vimgrep'], search_type) != -1
       var path = split(popup_getoptions(main_id).title)[0]
       if getcwd() == path
         filename = $'{path}/{filename}'
@@ -204,10 +207,14 @@ def UpdateFilePreview(search_type: string, search_pattern: string)
 
     var file_content = []
     if bufexists(filename)
-      file_content = getbufline(filename, 1, '$')
-    # TODO: check if you can remove the expand()
-    elseif filereadable($'{expand(filename)}')
-      file_content = readfile($'{expand(filename)}')
+      # The quickfix list load the buffers, but they have no content yet
+      if empty(getqflist())
+        file_content = getbufline(filename, 1, '$')
+      else
+        file_content = readfile($'{filename}')
+      endif
+    elseif filereadable($'{filename}')
+      file_content = readfile($'{filename}')
     else
       file_content = ["Can't preview the file!"]
     endif
@@ -242,8 +249,9 @@ def UpdateFilePreview(search_type: string, search_pattern: string)
       var old_synmaxcol = &synmaxcol
       &synmaxcol = 300
       var buf_extension = $'{fnamemodify(filename, ":e")}'
-      var found_filetypedetect_cmd = autocmd_get({group:
-      'filetypedetect'})->filter($'v:val.pattern =~ "*\\.{buf_extension}$"')
+      var found_filetypedetect_cmd =
+        autocmd_get({group: 'filetypedetect'})
+        ->filter($'v:val.pattern =~ "*\\.{buf_extension}$"')
       var set_filetype_cmd = empty(found_filetypedetect_cmd)
         ? '&filetype = ""'
         : found_filetypedetect_cmd[0].cmd
@@ -268,6 +276,7 @@ export def ClosePopups()
   RestoreCursor()
   prop_type_delete('PopupToolsMatched')
   &grepprg = saved_grepprg
+  exe ":cexpr []"
 enddef
 
 def PopupFilter(id: number,
@@ -661,6 +670,13 @@ export def FindDir()
   endif
 enddef
 
+def Qf2Results(): list<string>
+  var qf_results = getqflist()
+  var results = qf_results
+    ->mapnew((_, val) => ($'{fnamemodify(bufname(val.bufnr), ':p')}:{val.lnum}:{val.text}'))
+  return results
+enddef
+
 export def Vimgrep()
   # Guard
   if getcwd() == expand('~')
@@ -695,13 +711,11 @@ export def Vimgrep()
   endif
 
   # j is to avoid jumping on the first match
+
   var cmd = $'vimgrep /{what}/j{vimgrep_options} {search_dir}/{items}'
-  echom getqflist({'title': 0}).title
   # Echowarn(cmd)
   exe cmd
-  var qf_results = getqflist()
-  var results = qf_results
-    ->mapnew((_, val) => ($'{fnamemodify(bufname(val.bufnr), '.')}:{val.lnum}:{val.text}'))
+  var results = Qf2Results()->mapnew((_, val) => fnamemodify(val, ':.'))
   var title = $" {fnamemodify(getcwd(), ':~')} - Search results for '{what}': "
   ShowPopup(title, results, 'vimgrep', what)
 enddef
@@ -792,7 +806,6 @@ export def Grep()
   set nowildmenu
   search_dir = input($"\nin which folder (you can use 'tab'): ",
         \  './', 'dir')->substitute('\v(\\|/)$', '', '')
-  echom "UBA: " .. search_dir
   if empty(search_dir) || search_dir == './'
     search_dir = getcwd()
   endif
@@ -845,13 +858,7 @@ export def Grep()
   endif
 
   var qf_results = getqflist()
-  var results = qf_results
-    ->mapnew((_, val) => ($'{fnamemodify(bufname(val.bufnr), 'p')}:{val.lnum}:{val.text}'))
-  # Ugly hack for Windows given that in the qf-list you have \User\ubaldot,
-  # i.e. the C: has gone.
-  if has('win32')
-    results->map((_, val) => ('C:' .. val))
-  endif
+  var results = Qf2Results()->mapnew((_, val) => fnamemodify(val, ':.'))
   var title = $" {fnamemodify(getcwd(), ':~')} - Search results for '{what}': "
   ShowPopup(title, results, 'grep', what)
 enddef
