@@ -637,6 +637,11 @@ enddef
 
 export def FindDir()
   # Main
+  if getcwd() == expand('~')
+    Echoerr("You are in your home folder. Too many results.")
+    return
+  endif
+
   what = input($"current folder: '{fnamemodify(getcwd(), ':~')}'\n
         \Folder name to search ('enter' for all): ")
   var hidden = what[0] == '.' ? '' : '*'
@@ -685,7 +690,7 @@ export def Vimgrep()
   endif
 
   var cmd = $'vimgrep /{what}/{vimgrep_options} {search_dir}/{items}'
-  Echowarn(cmd)
+  # Echowarn(cmd)
   exe cmd
   var qf_results = getqflist()
   var results = qf_results
@@ -769,14 +774,11 @@ export def Grep()
   GrepInBufferHighlight()
   what = input($"current folder: '{fnamemodify(getcwd(), ':~')}'\n
         \String to find: ")
+
+  GrepInBufferHighlightClear()
   if empty(what)
-    GrepInBufferHighlightClear()
     return
   endif
-  GrepInBufferHighlightClear()
-
-  items = expand('%:t')
-  search_dir = expand('%:h')
 
   items = input($"\nin which files ('*' for all files): ", '*.')
   var current_wildmenu = &wildmenu
@@ -819,11 +821,11 @@ export def Grep()
 
   # Get results
   if has('win32')
-    Echowarn(cmd_win)
+    # Echowarn(cmd_win)
     &grepprg = cmd_win
     grep!
   else
-    Echowarn(cmd_nix)
+    # Echowarn(cmd_nix)
     &grepprg = cmd_nix
     grep!
   endif

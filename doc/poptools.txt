@@ -9,8 +9,9 @@ CONTENTS                                            *poptools-contents*
     1. Introduction ......... |poptools-introduction|
     2. Requirements ......... |poptools-requirements|
     3. Commands ............. |poptools-commands|
-    4. Configuration ........ |poptools-configuration|
-    5. License .............. |poptools-license|
+    4. Grep and Vimgrep ..... |poptools-grep|
+    5. Configuration ........ |poptools-configuration|
+    6. License .............. |poptools-license|
 
 ==============================================================================
 INTRODUCTION                                    *poptools-introduction*
@@ -58,6 +59,33 @@ It follows the list of available commads: >
 <
 
 ==============================================================================
+GREP AND VIMGREP                          *poptools-grep*  *poptools-vimgrep*
+
+`PopupToolsVimGrep` uses |vimgrep| whereas `PopupToolsGrep` uses |grep|.
+However, the user interface is the same.
+The results appear both in the |quickfix-list| and in the popup window.
+
+By default, |grepprg| is set,as it follows:
+
+>
+  # Windows
+  &grepprg =
+    'powershell -NoProfile -ExecutionPolicy Bypass -Command '
+      .. '"& {Set-Location -LiteralPath ''' .. search_dir .. '''; findstr /C:'''
+      .. what .. ''' /N /S ''' .. items .. '''}"'
+
+  # *nix
+  &grepprg = 'grep -nrH --include="{items}" "{what}" {search_dir}'
+<
+
+where the values of `{what}`,`{files}` and `{search_dir}` are replaced by
+user input values.
+
+You can also configure your own |grepprg| command through the keys
+`grep_cmd_win` and `grep_cmd_nix` of the |g:poptools_config| dictionary and
+you can use the placeholders `{search_dir}, {items}` and `{what}`.
+
+==============================================================================
 CONFIGURATION                    *poptools-configuration* *g:poptools_config*
 
 The plug configuration is done through `g:poptools_config` dictionary.
@@ -89,7 +117,7 @@ filling it with he various keys.
        "preview_syntax"   Set to `true` if you want syntax highlighting in the
                           preview window. Note that syntax highlighting may
                           slow down the user-experience. Default `true`.
-       "grep_cmd_win"     Command used to perform search in Windows.
+       "grep_cmd_win"     Value of |grepprg| for Windows.
                           Default:
       >
       'powershell -NoProfile -ExecutionPolicy Bypass -Command '
@@ -97,18 +125,16 @@ filling it with he various keys.
       .. what .. ''' /N /S ''' .. items .. '''}"
 <
 
-       "grep_cmd_nix"     Command used to perform search in *nix systems.
+       "grep_cmd_nix"     Value of |grepprg| for *nix systems.
                           Default:
       >
-        grep -nrH --include="{items}" "{what}" {search_dir}
+             grep -nrH --include="{items}" "{what}" {search_dir}
 <
-
-
-The "grep" command sent to the shell is displayed in the command line and it
-can be retrieved it with `:messages`.
-
-Note: the return format of the user-defined search commands shall be of the
-form `filename:line_number:line_content` otherwise the results cannot be parsed.
+If you define your own |grepprg|, then the elements in the quickfix shall
+contain the buffer number, the line number and the text. You can verify it by
+running `:echo getqflist()`. The returned dictionaries must have the keys
+`bufnr`, `lnum` and `text`. If that is not the case, then you need to set
+|grepformat| adequately. See |grepformat| for more info.
 
 ==============================================================================
 LICENSE                                            *poptools-license*

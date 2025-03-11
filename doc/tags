@@ -2,7 +2,9 @@ g:poptools_config	poptools.txt	/*g:poptools_config*
 poptools-commands	poptools.txt	/*poptools-commands*
 poptools-configuration	poptools.txt	/*poptools-configuration*
 poptools-contents	poptools.txt	/*poptools-contents*
+poptools-grep	poptools.txt	/*poptools-grep*
 poptools-introduction	poptools.txt	/*poptools-introduction*
 poptools-license	poptools.txt	/*poptools-license*
 poptools-requirements	poptools.txt	/*poptools-requirements*
+poptools-vimgrep	poptools.txt	/*poptools-vimgrep*
 poptools.txt	poptools.txt	/*poptools.txt*

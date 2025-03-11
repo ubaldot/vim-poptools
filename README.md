@@ -114,29 +114,29 @@ Hidden files are searched in non-hidden folders. To find files in a hidden
 folder, you must first `cd` into such a folder. For example, `cd ~/.vim`
 followed by `PopupFindFiles` will search files inside the `.vim` folder.
 
-### `PoptoolsGrep`
+### `PoptoolsGrep` and `PoptoolsVimgrep`
 
-This command uses an external "grep" program and therefore it is not affected
-by the Vim options settings. The default "grep" commands are the following:
+They use the internal `:h vimgrep` and the external `:h grep`. However, The
+user interface is the same. The results appear both in the quickfix-list and in
+the popup.
+
+By default, the option `'grepprg'` is set, as it follows:
 
 ```
   # Windows
-  cmd_win_default =
+  &grepprg =
     'powershell -NoProfile -ExecutionPolicy Bypass -Command '
       .. '"& {Set-Location -LiteralPath ''' .. search_dir .. '''; findstr /C:'''
       .. what .. ''' /N /S ''' .. items .. '''}"'
 
   # *nix
-  cmd_nix_default = 'grep -nrH --include="{items}" "{what}" {search_dir}'
+  &grepprg = 'grep -nrH --include="{items}" "{what}" {search_dir}'
 ```
 
 where the values of `{what}`,`{files}` and `{search_dir}` are replaced by
 user input.
 
-> [!CAUTION]
-> What follows may not work super-well.
-
-You can also configure your own grep commands through the keys `grep_cmd_win`
+You can also configure your own `'grepprg'` command through the keys `grep_cmd_win`
 and `grep_cmd_nix` of the `g:poptools_config` dictionary and you can use the
 placeholders `{search_dir}, {items}` and `{what}`. For example, you could set
 the following:
@@ -147,13 +147,11 @@ g:poptools_config['grep_cmd_win'] = 'powershell -NoProfile -ExecutionPolicy '
 .. 'findstr /C:''{what}'' /N /S {items}}"'
 ```
 
-The "grep" command sent to the shell is displayed in the command line and it
-can be retrieved it with `:messages`.
-
-The return format of the user-defined search commands shall start with
-`filename:line_number:line_content` otherwise the results cannot be parsed.
-However, if things crash, you can use `:PoptoolsKill` to close all the
-Poptools popup windows.
+If you define your own `'grepprg'`, then the elements in the quickfix shall
+contain the buffer number, the line number and the text. You can verify it by
+running `:echo getqflist()`. The returned dictionaries must have the keys
+`bufnr`, `lnum` and `text`. If that is not the case, then you need to set
+`'grepformat'` adequately. See `:h 'grepformat'` for more info.
 
 ### `PopupFindDir`
 
