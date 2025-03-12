@@ -29,6 +29,7 @@ var what: string
 var items: string
 var search_dir: string
 
+var grep_inc_search: bool
 # Hide cursor when operating in the popups
 var gui_cursor: list<dict<any>>
 
@@ -63,6 +64,12 @@ def InitScriptLocalVars()
     preview_syntax = g:poptools_config['preview_syntax']
   else
     preview_syntax = true
+  endif
+
+  if exists('g:poptools_config') && has_key(g:poptools_config, 'grep_inc_search')
+    grep_inc_search = g:poptools_config['grep_inc_search']
+  else
+    grep_inc_search = true
   endif
 
   if exists('g:poptools_config') && has_key(g:poptools_config, 'fuzzy_search')
@@ -688,8 +695,12 @@ export def Vimgrep()
   endif
 
   # Main
+  if grep_inc_search
+    GrepInBufferHighlight()
+  endif
   what = input($"current folder: '{fnamemodify(getcwd(), ':~')}'\n
         \String to find: ")
+  GrepInBufferHighlightClear()
   if empty(what)
     return
   endif
@@ -796,7 +807,9 @@ export def Grep()
   endif
 
   # Main
-  GrepInBufferHighlight()
+  if grep_inc_search
+    GrepInBufferHighlight()
+  endif
   what = input($"current folder: '{fnamemodify(getcwd(), ':~')}'\n
         \String to find: ")
 

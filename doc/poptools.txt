@@ -101,28 +101,31 @@ filling it with he various keys.
       Available keys:
         "preview_file"    Set to `true` if you want a preview window when
                           searching for files.
-                          Default `false`.
+                          Default: `false`.
 "preview_file_in_path"    Set to `true` if you want a preview window when
                           searching for files in path.
-                          Default `false`.
+                          Default: `false`.
 "preview_recent_files"    Set to `true` if you want a preview window when
                           searching for recently opened files.
-                          Default `false`.
+                          Default: `false`.
      "preview_buffers"    Set to `true` if you want a preview window when
                           searching for buffers.
-                          Default `false`.
+                          Default: `false`.
        "preview_grep"     Set to `true` if you want a preview window when
                           using poptools grep functions.
-                          Default `false`.
+                          Default: `false`.
     "preview_vimgrep"     Set to `true` if you want a preview window when
                           using poptools vimgrep functions.
-                          Default `false`.
+                          Default: `false`.
        "fuzzy_search"     Set to `true` if you want a fuzzy filtering of the
                           results, or to `false` if you want to filter based
-                          on exact match. Default `true`.
+                          on exact match. Default: `true`.
        "preview_syntax"   Set to `true` if you want syntax highlighting in the
                           preview window. Note that syntax highlighting may
-                          slow down the user-experience. Default `true`.
+                          slow down the user-experience. Default: `true`.
+      "grep_inc_search"   Set to `false` if you don't want to incrementally
+                          search in the current buffer when using `grep`
+                          and `vimgrep`. Default: `true`.
        "grep_cmd_win"     Value of |grepprg| for Windows.
                           Default:
       >
