@@ -131,7 +131,6 @@ def PopupCallbackFileBuffer(id: number, idx: number)
     echo ""
     var selection = getbufline(winbufnr(main_id), idx)[0]
     exe $'edit {selection}'
-
     RestoreCursor()
   endif
 enddef
@@ -155,7 +154,6 @@ def PopupCallbackDir(id: number, idx: number)
     pwd
     popup_close(prompt_id, -1)
     RestoreCursor()
-
   endif
 enddef
 
@@ -184,10 +182,10 @@ def UpdateFilePreview(search_type: string, search_pattern: string)
   # Parse the highlighted line on the main popup
   var idx = line('.', main_id)
 
-  # This "if" is needed because the filter is called on <cr> anyways
+  # This 'if' is needed because the filter is called on <cr> anyways
   if idx > 0
-    # The main_id may contain 'filenames' or 'filenames:lines:text'
-    # var filename = index(['grep', 'vimgrep'], search_type) >= 0
+    # The lines of main_id may be of the form 'filenames'
+    # or 'filenames:lines:text'
     var filename = index(['grep', 'vimgrep'], search_type) != -1
       ? getbufline(winbufnr(main_id), idx)[0]->matchstr('^.*\ze:\d')
       : getbufline(winbufnr(main_id), idx)[0]
@@ -277,7 +275,6 @@ export def ClosePopups()
   popup_close(prompt_id, -1)
   RestoreCursor()
   prop_type_delete('PopupToolsMatched')
-  exe ":cexpr []"
 enddef
 
 def PopupFilter(id: number,
@@ -289,8 +286,8 @@ def PopupFilter(id: number,
     current_background: string,
     ): bool
 
+  # Save for last search
   if index(['file', 'file_in_path', 'grep', 'vimgrep'], search_type) != -1
-    # Save for last search
     last_results = getbufline(winbufnr(main_id), 1, '$')
     last_title = popup_getoptions(main_id).title
     last_search_type = search_type
@@ -308,9 +305,9 @@ def PopupFilter(id: number,
   endif
 
   # For debugging
-  # echo "Pressed key: " .. key
+  # echo 'Pressed key: ' .. key
   echo ''
-  # You never know what the user can type...
+  # You never know what the user can type... Let's use a try-catch
   try
     if key == "\<CR>"
       popup_close(main_id, getcurpos(main_id)[1])
@@ -449,7 +446,6 @@ def ShowPromptPopup(results: list<string>,
     search_type: string,
     search_pattern: string)
   # This is the UI thing
-  #
   var main_id_core_line = popup_getpos(main_id).core_line
   var main_id_core_col = popup_getpos(main_id).core_col
 
@@ -477,7 +473,6 @@ def ShowPromptPopup(results: list<string>,
   opts.filter = (id, key) => PopupFilter(id, key, results, search_type,
     search_pattern, current_colorscheme, current_background)
 
-
   var num_hits = len(getbufline(winbufnr(main_id), 1, "$"))
   opts.title = $' {base_title} ({num_hits}) '
 
@@ -491,9 +486,10 @@ def ShowPopup(title: string,
     results: list<string>,
     search_type: string,
     search_pattern: string = '')
-  # This function is regarded as main function.
+  # This function is regarded as main function. It is called once
+  # the 'results' list is ready.
   InitScriptLocalVars()
-  # Clean up the command line to avoid "Press Enter" otherwise the popups will
+  # Clean up the command line to avoid 'Press Enter' otherwise the popups will
   # not show up
   redraw
 
@@ -565,7 +561,6 @@ def ShowPopup(title: string,
     opts.minwidth = popup_width
     opts.maxwidth = popup_width
 
-    # TODO Opts for preview_id :Fix +1/+0 (should be fixed with the modulo)
     opts.col = popup_width + popup_width / 2 + popup_width % 2
     preview_id = popup_create("Something went wrong."
           .. "Run :call popup_clear() to close.", opts)
@@ -603,8 +598,7 @@ enddef
 
 # ---- API ------------
 # The following functions are associated to commands in the plugin file.
-# They are used to generate the 'result' and call ShowPopup()
-#
+# They are used to generate the 'results' list to pass to ShowPopup()
 export def FindFile(search_type: string)
   # Guard
   if (search_type == 'file' || search_type == 'file_in_path')
@@ -650,7 +644,6 @@ export def FindFile(search_type: string)
 enddef
 
 export def FindDir()
-  # Main
   if getcwd() == expand('~')
     Echoerr("You are in your home folder. Too many results.")
     return
@@ -708,10 +701,13 @@ export def Vimgrep()
   else
     # vimgrep does not like non-escaped spaces. We also have to remove the
     # final \ or / in case the user type a folder with a final / or \,
-    # e.g. 'Saved Games\' shall be replaced with 'Saved\ Games'
+    # e.g. '~\Saved Games\' shall be replaced with '~\Saved\ Games'
+    var current_wildmenu = &wildmenu
+    set nowildmenu
     search_dir = input($"\nin which folder(s) (you can use 'tab'): ", './**', 'dir')
                  ->escape(' ')
                  ->substitute('\v(\\|/)$', '', '')
+    &wildmenu = current_wildmenu
   endif
 
   var vimgrep_options = input($"\nVimgrep options (g = every match, f = fuzzy): ", 'g')
@@ -719,19 +715,16 @@ export def Vimgrep()
     return
   endif
 
-  # j is to avoid jumping on the first match
-
+  # 'j' is to avoid jumping on the first match
   var cmd = $'vimgrep /{what}/j{vimgrep_options} {search_dir}/{items}'
-  # Echowarn(cmd)
   exe cmd
   var results = Qf2Results()->mapnew((_, val) => fnamemodify(val, ':.'))
   var title = $" {fnamemodify(getcwd(), ':~')} - Search results for '{what}': "
   ShowPopup(title, results, 'vimgrep', what)
 enddef
 
-# TODO: These two functions are used to mimic the in_search feature for
-# GrepInBuffer() function. Not sure if it is the best thing to do. You can
-# always comment/uncomment in GrepInBuffer()
+# These two functions are used to mimic the in_search feature for
+# GrepInBuffer() function.
 var match_id = 0
 def GrepInBufferHighlight()
   augroup SEARCH_HI | autocmd!
@@ -789,7 +782,6 @@ export def GrepInBuffer(what_user: string = '')
   setcursorcharpos(initial_pos[1], initial_pos[2], initial_pos[3])
 
   var title = $" {fnamemodify(getcwd(), ':~')} - Search results for '{what}': "
-
   ShowPopup(title, results, 'grep', what)
 enddef
 
@@ -824,8 +816,6 @@ export def Grep()
   &wildmenu = current_wildmenu
 
   # Windows default
-
-  var tmp = fnamemodify($'{search_dir}\{items}', ':p')
   var cmd_win_default = 'powershell -NoProfile -ExecutionPolicy Bypass -Command '
   .. '"& { findstr /C:''' .. what .. ''' /N /S '''
   .. fnamemodify($'{search_dir}\{items}', ':p') .. ''' }"'
@@ -856,12 +846,10 @@ export def Grep()
   # Get results
   var saved_grepprg = &grepprg
   if has('win32')
-    # Echowarn(cmd_win)
     &grepprg = cmd_win
     grep!
     echom getqflist({'title': 0}).title
   else
-    # Echowarn(cmd_nix)
     &grepprg = cmd_nix
     grep!
     echom getqflist({'title': 0}).title
