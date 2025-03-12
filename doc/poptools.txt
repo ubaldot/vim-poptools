@@ -69,10 +69,9 @@ By default, |grepprg| is set,as it follows:
 
 >
   # Windows
-  &grepprg =
-    'powershell -NoProfile -ExecutionPolicy Bypass -Command '
-      .. '"& {Set-Location -LiteralPath ''' .. search_dir .. '''; findstr /C:'''
-      .. what .. ''' /N /S ''' .. items .. '''}"'
+  'powershell -NoProfile -ExecutionPolicy Bypass -Command '
+    .. '"& { findstr /C:''' .. what .. ''' /N /S '''
+    .. fnamemodify($'{search_dir}\{items}', ':p') .. ''' }"'
 
   # *nix
   &grepprg = 'grep -nrH --include="{items}" "{what}" {search_dir}'
@@ -81,11 +80,13 @@ By default, |grepprg| is set,as it follows:
 where the values of `{what}`,`{files}` and `{search_dir}` are replaced by
 user input values.
 
-You can also configure your own |grepprg| command through the keys
+You can configure your own |grepprg| command through the keys
 `grep_cmd_win` and `grep_cmd_nix` of the |g:poptools_config| dictionary and
-you can use the placeholders `{search_dir}, {items}` and `{what}`.
+you can use the placeholders `{search_dir}, {items}` and `{what}`. See below
+for more info.
 
-The grep command sent to the shell can be retrieved through |:messages|.
+The grep command sent to the shell can be retrieved through |:messages|. See
+below for more info.
 
 TIP: Once you have performed a search, all the results can be accessed at any
 time through `:PopupToolsLastSearch` without the need of performing a new
