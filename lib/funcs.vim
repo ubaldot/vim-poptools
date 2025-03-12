@@ -102,7 +102,6 @@ def PopupCallbackGrep(id: number, idx: number)
     var filename = selection->matchstr('^.*\ze:\d')
     var line = selection->matchstr('^.\{-}:\zs\d*\ze:')
 
-
     var path = split(popup_getoptions(id).title)[0]
     try
       if getcwd() == path
@@ -186,13 +185,13 @@ def UpdateFilePreview(search_type: string, search_pattern: string)
   if idx > 0
     # The main_id may contain 'filenames' or 'filenames:lines:text'
     # var filename = index(['grep', 'vimgrep'], search_type) >= 0
-    var filename = search_type !=# 'grep'
-      ? getbufline(winbufnr(main_id), idx)[0]
-      : getbufline(winbufnr(main_id), idx)[0]->matchstr('^.*\ze:\d')
+    var filename = index(['grep', 'vimgrep'], search_type) != -1
+      ? getbufline(winbufnr(main_id), idx)[0]->matchstr('^.*\ze:\d')
+      : getbufline(winbufnr(main_id), idx)[0]
 
-    var line_nr = search_type !=# 'grep'
-      ? popup_height / 2
-      : str2nr(getbufline(winbufnr(main_id), idx)[0]->matchstr(':\zs\d*\ze:'))
+    var line_nr = index(['grep', 'vimgrep'], search_type) != -1
+      ? str2nr(getbufline(winbufnr(main_id), idx)[0]->matchstr(':\zs\d*\ze:'))
+      : popup_height / 2
 
     # We split the fullname so that we can show it nicely in the popup.
     # However, when showing the preview or during the callback, it is safer to
@@ -550,6 +549,10 @@ def ShowPopup(title: string,
     if exists('g:poptools_config') && has_key(g:poptools_config, 'preview_grep')
       show_preview = g:poptools_config['preview_grep']
     endif
+  elseif search_type == 'vimgrep'
+    if exists('g:poptools_config') && has_key(g:poptools_config, 'preview_vimgrep')
+      show_preview = g:poptools_config['preview_vimgrep']
+    endif
   endif
 
   if show_preview
@@ -746,8 +749,10 @@ def GrepInBufferHighlight()
 enddef
 
 def GrepInBufferHighlightClear()
-  autocmd! SEARCH_HI
-  augroup! SEARCH_HI
+  if exists("#SEARCH_HI")
+    autocmd! SEARCH_HI
+    augroup! SEARCH_HI
+  endif
   if match_id > 0
     matchdelete(match_id)
   endif
@@ -758,11 +763,10 @@ export def GrepInBuffer(what_user: string = '')
   if empty(what_user)
     GrepInBufferHighlight()
     what = input("Find in current buffer: ")
+    GrepInBufferHighlightClear()
     if empty(what)
-      GrepInBufferHighlightClear()
       return
     endif
-    GrepInBufferHighlightClear()
   else
     what = what_user
  endif

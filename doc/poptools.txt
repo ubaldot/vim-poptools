@@ -87,6 +87,10 @@ you can use the placeholders `{search_dir}, {items}` and `{what}`.
 
 The grep command sent to the shell can be retrieved through |:messages|.
 
+TIP: Once you have performed a search, all the results can be accessed at any
+time through `:PopupToolsLastSearch` without the need of performing a new
+search.
+
 ==============================================================================
 CONFIGURATION                    *poptools-configuration* *g:poptools_config*
 
@@ -110,8 +114,8 @@ filling it with he various keys.
        "preview_grep"     Set to `true` if you want a preview window when
                           using poptools grep functions.
                           Default `false`.
-       "preview_grep"     Set to `true` if you want a preview window when
-                          using poptools grep functions.
+    "preview_vimgrep"     Set to `true` if you want a preview window when
+                          using poptools vimgrep functions.
                           Default `false`.
        "fuzzy_search"     Set to `true` if you want a fuzzy filtering of the
                           results, or to `false` if you want to filter based
