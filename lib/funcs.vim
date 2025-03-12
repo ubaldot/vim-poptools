@@ -19,8 +19,6 @@ var prompt_cursor: string
 var prompt_sign: string
 var prompt_text: string
 
-var saved_grepprg: string
-
 # User defined settings through g:poptools_config
 var fuzzy_search: bool
 var preview_syntax: bool
@@ -57,8 +55,6 @@ def InitScriptLocalVars()
   what = ''
   items = ''
   search_dir = ''
-
-  saved_grepprg = &grepprg
 
   if exists('g:poptools_config') && has_key(g:poptools_config, 'preview_syntax')
     preview_syntax = g:poptools_config['preview_syntax']
@@ -281,7 +277,6 @@ export def ClosePopups()
   popup_close(prompt_id, -1)
   RestoreCursor()
   prop_type_delete('PopupToolsMatched')
-  &grepprg = saved_grepprg
   exe ":cexpr []"
 enddef
 
@@ -859,6 +854,7 @@ export def Grep()
   redraw
 
   # Get results
+  var saved_grepprg = &grepprg
   if has('win32')
     # Echowarn(cmd_win)
     &grepprg = cmd_win
@@ -870,6 +866,7 @@ export def Grep()
     grep!
     echom getqflist({'title': 0}).title
   endif
+  &grepprg = saved_grepprg
 
   var qf_results = getqflist()
   var results = Qf2Results()->mapnew((_, val) => fnamemodify(val, ':.'))
