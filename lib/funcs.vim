@@ -837,9 +837,9 @@ export def Grep()
   if exists('g:poptools_config') && has_key(g:poptools_config, 'grep_cmd_win')
     var search_dir_escaped = escape(search_dir, '\')
     cmd_win = g:poptools_config['grep_cmd_win']
-      ->substitute("{search_dir}", $"{search_dir_escaped}", 'g')
+      ->substitute("{search_dir}", search_dir_escaped, 'g')
       ->substitute("{items}", items, 'g')
-      ->substitute("{what}", $"{what}", 'g')
+      ->substitute("{what}", what, 'g')
   endif
 
   var cmd_nix = cmd_nix_default
