@@ -1,15 +1,13 @@
 vim9script
 
 # TODO Exclude 'wildignore' paths in Grep (it uses an external program)
-# var popup_width: number
-# var popup_height: number
 
 # This must be persistent across different calls and therefore we explicitly
 # assign a number
 var last_results = []
 var last_title = ''
 var last_search_type = ''
-var last_search_pattern = ''
+var last_what = ''
 
 var main_id: number
 var prompt_id: number
@@ -41,8 +39,6 @@ enddef
 
 def InitScriptLocalVars()
   # Set script-local variables
-  # popup_width = (&columns * 2) / 3
-  # popup_height = &lines / 2
 
   main_id = -1
   prompt_id = -1
@@ -168,7 +164,7 @@ def PopupCallbackColorscheme(id: number, idx: number)
   endif
 enddef
 
-def UpdateFilePreview(search_type: string, search_pattern: string)
+def UpdateFilePreview(search_type: string)
   # You  may use external programs to count the lines if 'readfile()' is too
   # slow, e.g.
   # var file_length = has('win32') ? str2nr(system('...')) :
@@ -236,13 +232,6 @@ def UpdateFilePreview(search_type: string, search_pattern: string)
     # Unfold stuff
     win_execute(preview_id, 'norm! zR')
 
-    # Highlight grep matches
-    if !empty(search_pattern)
-      win_execute(preview_id, $'normal! {line_nr}gg')
-      # win_execute(preview_id, $'setlocal cursorline')
-      win_execute(preview_id, $'match Search /{search_pattern}/')
-    endif
-
     # Syntax highlight if it creates problems, disable it. It is not
     # bulletproof
     if preview_syntax
@@ -261,6 +250,13 @@ def UpdateFilePreview(search_type: string, search_pattern: string)
         : found_filetypedetect_cmd[0].cmd
       win_execute(preview_id, set_filetype_cmd)
       &synmaxcol = old_synmaxcol
+    endif
+
+    # Highlight grep matches
+    if !empty(what)
+      win_execute(preview_id, $'normal! {line_nr}gg')
+      win_execute(preview_id, 'setlocal cursorline')
+      win_execute(preview_id, $'match Search /{what}/')
     endif
 
     # Set preview ID title
@@ -285,7 +281,6 @@ def PopupFilter(id: number,
     key: string,
     results: list<string>,
     search_type: string,
-    search_pattern: string,
     current_colorscheme: string,
     current_background: string,
     ): bool
@@ -295,7 +290,7 @@ def PopupFilter(id: number,
     last_results = getbufline(winbufnr(main_id), 1, '$')
     last_title = popup_getoptions(main_id).title
     last_search_type = search_type
-    last_search_pattern = search_pattern
+    last_what = what
   endif
 
   var maxheight = popup_getoptions(main_id).maxheight
@@ -426,7 +421,7 @@ def PopupFilter(id: number,
   endtry
 
   if preview_id != -1
-    UpdateFilePreview(search_type, search_pattern)
+    UpdateFilePreview(search_type)
   endif
 
   if search_type == 'colorscheme'
@@ -451,8 +446,7 @@ def ShowColorscheme(current_background: string)
 enddef
 
 def ShowPromptPopup(results: list<string>,
-    search_type: string,
-    search_pattern: string)
+    search_type: string)
   # This is the UI thing
   var main_id_core_line = popup_getpos(main_id).core_line
   var main_id_core_col = popup_getpos(main_id).core_col
@@ -476,10 +470,14 @@ def ShowPromptPopup(results: list<string>,
   var current_colorscheme = execute('colorscheme')->substitute('\n', '', 'g')
   var current_background = &background
   opts.filter = (id, key) => PopupFilter(id, key, results, search_type,
-    search_pattern, current_colorscheme, current_background)
+    current_colorscheme, current_background)
 
   var num_hits = len(getbufline(winbufnr(main_id), 1, "$"))
-  opts.title = $' {base_title} ({num_hits}) '
+  if empty(what)
+    opts.title = $' {base_title} ({num_hits}) '
+  else
+    opts.title = $' {base_title} "{what}" ({num_hits}) '
+  endif
 
   prompt_text = ""
   prompt_id = popup_create([prompt_sign .. prompt_cursor], opts)
@@ -489,11 +487,9 @@ enddef
 # ----- MAIN -----
 def ShowPopup(results: list<string>,
     search_type: string,
-    search_pattern: string = '',
     title: string = '')
   # This function is regarded as main function. It is called once
   # the 'results' list is ready.
-  InitScriptLocalVars()
   # Clean up the command line to avoid 'Press Enter' otherwise the popups will
   # not show up
   redraw
@@ -572,6 +568,7 @@ def ShowPopup(results: list<string>,
     # Some geometry: we want more room in case of preview
     popup_width = (&columns * 9) / 10
     popup_height = (&lines * 7) / 10
+    var left_margin = 8
 
     # Adjustments for the main popup
     opts.pos = 'topleft'
@@ -580,23 +577,25 @@ def ShowPopup(results: list<string>,
     opts.maxheight = popup_height
     opts.minheight = popup_height
     opts.line = 6
-    opts.col = (&columns * 4) / 10 - opts.minwidth - 1
+    # opts.col = &columns / 2 - opts.minwidth - 1
+    opts.col = left_margin
 
     # Adjustments for the preview popup
     var preview_opts = copy(opts)
     preview_opts.pos = 'topleft'
     preview_opts.line = opts.line - 2
-    preview_opts.col = (&columns * 4) / 10 + 1
+    preview_opts.col = left_margin + opts.maxwidth + 2
     preview_opts.minwidth = float2nr(0.6 * popup_width)
     preview_opts.maxwidth = float2nr(0.6 * popup_width)
     preview_opts.maxheight = opts.minheight + 2
     preview_opts.minheight = opts.minheight + 2
+    preview_opts.cursorline = 0
 
     preview_opts.borderchars = ['─', '│', '─', '│', '╭', '╮', '╯', '╰']
     preview_id = popup_create("Something went wrong."
-          .. "Run :call popup_clear() to close.", preview_opts)
+      .. "Run :call popup_clear() to close.", preview_opts)
 
-    UpdateFilePreview(search_type, search_pattern)
+    UpdateFilePreview(search_type)
   endif
 
   if search_type == 'colorscheme'
@@ -622,13 +621,14 @@ def ShowPopup(results: list<string>,
   opts.callback = PopupCallback
   popup_setoptions(main_id, opts)
 
-  ShowPromptPopup(results, search_type, search_pattern)
+  ShowPromptPopup(results, search_type)
 enddef
 
 # ---- API ------------
 # The following functions are associated to commands in the plugin file.
 # They are used to generate the 'results' list to pass to ShowPopup()
 export def FindFile(search_type: string)
+  InitScriptLocalVars()
   # Guard
   if (search_type == 'file' || search_type == 'file_in_path')
         \  && getcwd() == expand('~')
@@ -671,11 +671,12 @@ export def FindFile(search_type: string)
     results ->filter('v:val !~ "\/$"')
       ->filter((_, val) => filereadable(expand(val)))
       ->map((_, val) => fnamemodify(val, ':.'))
-    ShowPopup(results, search_type, '', title)
+    ShowPopup(results, search_type, title)
   endif
 enddef
 
 export def FindDir()
+  InitScriptLocalVars()
   if getcwd() == expand('~')
     Echoerr("You are in your home folder. Too many results.")
     return
@@ -696,7 +697,7 @@ export def FindDir()
     if empty(what)
       title = $" {fnamemodify(getcwd(), ':~')}: "
     endif
-    ShowPopup(results, 'dir', '', title)
+    ShowPopup(results, 'dir', title)
   endif
 enddef
 
@@ -704,11 +705,12 @@ def Qf2Results(): list<string>
   var qf_results = getqflist()
   var results = qf_results
     ->mapnew((_, val) => ($'{fnamemodify(bufname(val.bufnr), ':p')}'
-                  .. $':{val.lnum}:{val.text}'))
+    .. $':{val.lnum}:{val.text}'))
   return results
 enddef
 
 export def Vimgrep()
+  InitScriptLocalVars()
   # Guard
   if getcwd() == expand('~')
     Echoerr("You are in your home folder. Too many results.")
@@ -755,7 +757,7 @@ export def Vimgrep()
   exe cmd
   var results = Qf2Results()->mapnew((_, val) => fnamemodify(val, ':.'))
   var title = $" {fnamemodify(getcwd(), ':~')}: "
-  ShowPopup(results, 'vimgrep', what, title)
+  ShowPopup(results, 'vimgrep', title)
 enddef
 
 # These two functions are used to mimic the in_search feature for
@@ -798,6 +800,7 @@ def GrepInBufferHighlightClear()
 enddef
 
 export def GrepInBuffer(what_user: string = '')
+  InitScriptLocalVars()
   # The format is like grep, i.e. filename:linenumber:
   if empty(what_user)
     GrepInBufferHighlight()
@@ -822,11 +825,12 @@ export def GrepInBuffer(what_user: string = '')
   setcursorcharpos(initial_pos[1], initial_pos[2], initial_pos[3])
 
   var title = $" {fnamemodify(getcwd(), ':~')}: "
-  ShowPopup(results, 'grep', what, title)
+  ShowPopup(results, 'grep', title)
 enddef
 
 
 export def Grep()
+  InitScriptLocalVars()
   # Guard
   if getcwd() == expand('~')
     Echoerr("You are in your home folder. Too many results.")
@@ -899,10 +903,11 @@ export def Grep()
   var qf_results = getqflist()
   var results = Qf2Results()->mapnew((_, val) => fnamemodify(val, ':.'))
   var title = $" {fnamemodify(getcwd(), ':~')}: "
-  ShowPopup(results, 'grep', what, title)
+  ShowPopup(results, 'grep', title)
 enddef
 
 export def Buffers()
+  InitScriptLocalVars()
   var results = getcompletion('', 'buffer', true)
     ->map((_, val) => fnamemodify(val, ':.'))
   # var title = " Buffers: "
@@ -910,20 +915,22 @@ export def Buffers()
 enddef
 
 export def Colorscheme()
+  InitScriptLocalVars()
   hi link PopupSelected PmenuSel
   var results = getcompletion('', 'color', true)
   ShowPopup(results, 'colorscheme')
 enddef
 
 export def RecentFiles()
+  InitScriptLocalVars()
   var results =  copy(v:oldfiles)
     ->filter((_, val) => filereadable(expand(val)))
     ->map((_, val) => fnamemodify(val, ':.'))
-  var title = " Recently opened files: "
-  ShowPopup(results, 'recent_files', '', title)
+  ShowPopup(results, 'recent_files')
 enddef
 
 export def CmdHistory()
+  InitScriptLocalVars()
   var results = split(execute('history :'), '\n')
   for ii in range(0, len(results) - 1)
     results[ii] = substitute(results[ii], '\v^\>?\s*\d*\s*(\w*)', ':\1', 'g')
@@ -935,6 +942,6 @@ export def LastSearch()
   if empty(last_results)
     Echoerr('No last search results available!')
   else
-    ShowPopup(last_results, last_search_type, last_search_pattern, last_title)
+    ShowPopup(last_results, last_search_type, last_title)
   endif
 enddef
