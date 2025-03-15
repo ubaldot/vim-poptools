@@ -340,6 +340,15 @@ def PopupFilter(id: number,
       if ln == getcurpos(main_id)[1]
         win_execute(main_id, "normal! G")
       endif
+    # Scroll preview window
+    elseif preview_id != -1 && key == "\<C-f>"
+        win_execute(preview_id, "normal! \<C-f>")
+    elseif preview_id != -1 && key == "\<C-b>"
+        win_execute(preview_id, "normal! \<C-b>")
+    elseif preview_id != -1 && key == "\<C-e>"
+        win_execute(preview_id, "normal! \<C-e>")
+    elseif preview_id != -1 && key == "\<C-y>"
+        win_execute(preview_id, "normal! \<C-y>")
     # The real deal: take a single, printable character
     elseif key =~ '^\p$' || keytrans(key) ==# "<BS>" || key == "\<c-u>"
       if key =~ '^\p$'
@@ -597,6 +606,7 @@ def ShowPopup(results: list<string>,
     preview_opts.maxheight = opts.minheight + 2
     preview_opts.minheight = opts.minheight + 2
     preview_opts.cursorline = 0
+    preview_opts.scrollbar = 1
 
     preview_opts.borderchars = ['─', '│', '─', '│', '╭', '╮', '╯', '╰']
     preview_id = popup_create("Something went wrong."
