@@ -213,8 +213,8 @@ def UpdateFilePreview(search_type: string)
       else
         file_content = readfile($'{filename}')
       endif
-    elseif filereadable($'{filename}')
-      file_content = readfile($'{filename}')
+    elseif filereadable($'{expand(filename)}')
+      file_content = readfile($'{expand(filename)}')
     else
       file_content = ["Can't preview the file!"]
     endif
@@ -245,9 +245,16 @@ def UpdateFilePreview(search_type: string)
       var found_filetypedetect_cmd =
         autocmd_get({group: 'filetypedetect'})
         ->filter($'v:val.pattern =~ "*\\.{buf_extension}$"')
-      var set_filetype_cmd = empty(found_filetypedetect_cmd)
-        ? '&filetype = ""'
-        : found_filetypedetect_cmd[0].cmd
+      var set_filetype_cmd = ''
+      if empty(found_filetypedetect_cmd)
+        if index([$"{$HOME}/.vimrc", $"{$HOME}/.gvimrc"], expand(filename)) != -1
+         set_filetype_cmd = '&filetype = "vim"'
+        else
+         set_filetype_cmd = '&filetype = ""'
+        endif
+      else
+        set_filetype_cmd = found_filetypedetect_cmd[0].cmd
+      endif
       win_execute(preview_id, set_filetype_cmd)
       &synmaxcol = old_synmaxcol
     endif
@@ -585,8 +592,8 @@ def ShowPopup(results: list<string>,
     preview_opts.pos = 'topleft'
     preview_opts.line = opts.line - 2
     preview_opts.col = left_margin + opts.maxwidth + 2
-    preview_opts.minwidth = float2nr(0.6 * popup_width)
-    preview_opts.maxwidth = float2nr(0.6 * popup_width)
+    preview_opts.minwidth = float2nr(0.6 * popup_width) - 1
+    preview_opts.maxwidth = float2nr(0.6 * popup_width) - 1
     preview_opts.maxheight = opts.minheight + 2
     preview_opts.minheight = opts.minheight + 2
     preview_opts.cursorline = 0
