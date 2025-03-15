@@ -11,13 +11,13 @@ vim9script noclear
 #      popups and what the callback function should do may change.
 
 if !has('vim9script') ||  v:version < 900
-    # Needs Vim version 9.0 and above
-    echo "You need at least Vim 9.0"
-    finish
+  # Needs Vim version 9.0 and above
+  echo "You need at least Vim 9.0"
+  finish
 endif
 
 if exists('g:vim_poptools_loaded')
-    finish
+  finish
 endif
 g:vim_poptools_loaded = true
 
