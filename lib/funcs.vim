@@ -313,6 +313,7 @@ def PopupFilter(id: number,
   # For debugging
   # echo 'Pressed key: ' .. key
   echo ''
+  var preview_update = true
   # You never know what the user can type... Let's use a try-catch
   try
     if key == "\<CR>"
@@ -343,12 +344,17 @@ def PopupFilter(id: number,
     # Scroll preview window
     elseif preview_id != -1 && key == "\<C-f>"
         win_execute(preview_id, "normal! \<C-f>")
+        preview_update = false
     elseif preview_id != -1 && key == "\<C-b>"
         win_execute(preview_id, "normal! \<C-b>")
+        preview_update = false
     elseif preview_id != -1 && key == "\<C-e>"
+        # Echowarn("FOO")
         win_execute(preview_id, "normal! \<C-e>")
+        preview_update = false
     elseif preview_id != -1 && key == "\<C-y>"
         win_execute(preview_id, "normal! \<C-y>")
+        preview_update = false
     # The real deal: take a single, printable character
     elseif key =~ '^\p$' || keytrans(key) ==# "<BS>" || key == "\<c-u>"
       if key =~ '^\p$'
@@ -436,7 +442,7 @@ def PopupFilter(id: number,
     Echoerr('Internal error')
   endtry
 
-  if preview_id != -1
+  if preview_id != -1 && preview_update
     UpdateFilePreview(search_type)
   endif
 
