@@ -13,12 +13,12 @@ var main_id: number
 var prompt_id: number
 var preview_id: number
 
-var prompt_cursor: string
-var prompt_sign: string
-var prompt_text: string
+export var prompt_cursor: string
+export var prompt_sign: string
+export var prompt_text: string
 
 # User defined settings through g:poptools_config
-var fuzzy_search: bool
+export var fuzzy_search: bool = true
 var preview_syntax: bool
 
 var what: string
@@ -29,11 +29,11 @@ var grep_inc_search: bool
 # Hide cursor when operating in the popups
 var gui_cursor: list<dict<any>>
 
-def Echoerr(msg: string)
+export def Echoerr(msg: string)
   echohl ErrorMsg | echom $"[poptools] {msg}" | echohl None
 enddef
 
-def Echowarn(msg: string)
+export def Echowarn(msg: string)
   echohl WarningMsg | echom $"[poptools] {msg}" | echohl None
 enddef
 

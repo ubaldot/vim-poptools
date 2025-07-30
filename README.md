@@ -10,19 +10,18 @@ Exploit popups as much as you can!
 * Vim-poptools *
 </p>
 
-Poptools aims to scale your productivity by conveniently using popups for a
-multitude of tasks, from finding files and directories, to setting your
-favorite colorscheme.
-Once a list of results is slammed into a popup menu, you can filter it in an
-fuzzy or exact fashion.
+Poptools aims to boost your productivity by using popups for a variety of
+tasks—from finding files and directories to setting your favorite colorscheme.
 
-Poptools is more essential compared to similar plugins such as [fzf][0],
-[fuzzyy][1] or [scope][2] and differently from them, external programs are
-called _synchronously_, although things may change in the future. :)
+Unlike similar plugins such as [fzf][0], [fuzzyy][1], or [scope][2], Poptools
+keeps things essential and runs external programs synchronously—which,
+honestly, doesn’t bother me at all!
 
-Nevertheless, I personally like the interface and how it displays all the
-results at once. Additionally, I find the opportunity of saving the last
-search very handy. The configuration is also fairly straightforward.
+Configuration is extremely simple, and Poptools includes convenient features
+like restoring your last search instantly or creating handy dashboards via the
+`:PopupIndex` command.
+
+And yes—you can search results both fuzzily or exactly.
 
 ### Commands
 
@@ -42,6 +41,8 @@ The commands are self-explanatory:
 :PoptoolsGrep # External grep. Grep command is displayed.
 :PoptoolsVimgrep # Vimgrep, show results in the quickfix-list instead of a popup.
 :PoptoolsLastSearch # Show the last search results
+:PoptoolsIndex # Create your own dashboard, see `:h PoptoolsIndex`
+:PoptoolsReleaseNotes # Guess what?
 ```
 
 ... and if you are curious, the following is how I mapped them in my `.vimrc`:

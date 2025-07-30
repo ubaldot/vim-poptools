@@ -21,8 +21,34 @@ if exists('g:vim_poptools_loaded')
 endif
 g:vim_poptools_loaded = true
 
-import autoload "../lib/funcs.vim"
+var release_notes =<< END
+# vim-poptools: release notes
 
+## Links
+
+
+
+Press <Esc> to close this popup.
+END
+
+def ShowReleaseNotes()
+
+  const popup_options = {
+      border: [1, 1, 1, 1],
+      borderchars:  ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
+      filter: 'popup_filter_menu',
+    }
+
+  const popup_id = popup_create(release_notes, popup_options)
+  win_execute(popup_id, 'set filetype=markdown')
+  win_execute(popup_id, 'set conceallevel=2')
+enddef
+
+
+import autoload "../lib/funcs.vim"
+import autoload "../lib/indices.vim"
+
+command! -nargs=? PoptoolsIndex indices.ShowIndex(<f-args>)
 command! PoptoolsFindFile funcs.FindFile('file')
 command! PoptoolsFindFileInPath funcs.FindFile('file_in_path')
 command! PoptoolsFindDir funcs.FindDir()
@@ -35,3 +61,4 @@ command! PoptoolsVimgrep funcs.Vimgrep()
 command! PoptoolsColorscheme funcs.Colorscheme()
 command! PoptoolsLastSearch funcs.LastSearch()
 command! PoptoolsKill funcs.ClosePopups()
+command! PoptoolsReleaseNotes ShowReleaseNotes()
