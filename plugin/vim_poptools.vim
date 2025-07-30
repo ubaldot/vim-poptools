@@ -22,7 +22,9 @@ endif
 g:vim_poptools_loaded = true
 
 import autoload "../lib/funcs.vim"
+import autoload "../lib/indices.vim"
 
+command! -nargs=? PoptoolsIndex indices.ShowIndex(<f-args>)
 command! PoptoolsFindFile funcs.FindFile('file')
 command! PoptoolsFindFileInPath funcs.FindFile('file_in_path')
 command! PoptoolsFindDir funcs.FindDir()
