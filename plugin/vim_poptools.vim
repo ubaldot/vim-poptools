@@ -24,9 +24,10 @@ g:vim_poptools_loaded = true
 var release_notes =<< END
 # vim-poptools: release notes
 
-## Links
+## Create your dashboard
 
-
+The command `:PoptoolsIndex` is included to create dashboards.
+See `:h PoptoolsIndex` for more info.
 
 Press <Esc> to close this popup.
 END
