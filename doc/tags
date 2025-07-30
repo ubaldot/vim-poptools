@@ -1,4 +1,6 @@
+:PoptoolsIndex	poptools.txt	/*:PoptoolsIndex*
 g:poptools_config	poptools.txt	/*g:poptools_config*
+g:poptools_index	poptools.txt	/*g:poptools_index*
 poptools-commands	poptools.txt	/*poptools-commands*
 poptools-configuration	poptools.txt	/*poptools-configuration*
 poptools-contents	poptools.txt	/*poptools-contents*
