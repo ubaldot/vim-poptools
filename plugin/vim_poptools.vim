@@ -16,28 +16,52 @@ if !has('vim9script') ||  v:version < 900
   finish
 endif
 
-if exists('g:vim_poptools_loaded')
+if exists('g:vim_poptools_loaded') && g:vim_poptools_loaded
   finish
 endif
 g:vim_poptools_loaded = true
 
 var release_notes =<< END
-# vim-poptools: release notes
 
 ## Create your dashboard
 
 The command `:PoptoolsIndex` is included to create dashboards.
 See `:h PoptoolsIndex` for more info.
 
-Press <Esc> to close this popup.
+Press <Esc> or 'q' to close this popup.
 END
 
-def ShowReleaseNotes()
 
+def ReleaseNotesFilter(id: number, key: string): bool
+  # To handle the keys when release notes popup is visible
+  # Close
+  if key ==# 'q' || key ==# "\<esc>"
+    popup_close(id)
+  # Move down
+  elseif ["\<tab>", "\<C-n>", "\<Down>", "\<ScrollWheelDown>"]->index(key) != -1
+    win_execute(id, "normal! \<c-e>")
+  # Move up
+  elseif ["\<S-Tab>", "\<C-p>", "\<Up>", "\<ScrollWheelUp>"]->index(key) != -1
+    win_execute(id, "normal! \<c-y>")
+  # Jump down
+  elseif key == "\<C-f>"
+    win_execute(id, "normal! \<c-f>")
+  # Jump up
+  elseif key == "\<C-b>"
+    win_execute(id, "normal! \<c-b>")
+  else
+    return false
+  endif
+  return true
+enddef
+def ShowReleaseNotes()
+  const title = " vim-poptools "
   const popup_options = {
       border: [1, 1, 1, 1],
       borderchars:  ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
-      filter: 'popup_filter_menu',
+      scrollbar: false,
+      title: title,
+      filter: ReleaseNotesFilter
     }
 
   const popup_id = popup_create(release_notes, popup_options)
