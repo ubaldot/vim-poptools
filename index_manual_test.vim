@@ -2,6 +2,10 @@ vim9script
 
 message clear
 
+def Bar()
+  echom "Fatto!"
+enddef
+
 def g:Foo()
   echom "Fatto!"
 enddef
@@ -13,6 +17,7 @@ var test = [
   ["empty", ""],
   # ["wrong_type", 12234],
   ["func_lambda", string(() => 'echo "ECCOLA!"')],
+  ["non_global_func", "function('Bar')"],
 ]
 
 var test_safe = [

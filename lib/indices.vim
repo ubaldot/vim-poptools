@@ -245,12 +245,14 @@ def IndexCallback(id: number, idx: number)
           Tmp()
         catch
           RestoreIndexCursor()
-          funcs.Echoerr("Function must be global")
+          funcs.Echoerr("Function must be global "
+                \ .. "OR the function has some error(s)")
         endtry
       endif
     endif
 
     popup_close(prompt_id, -1)
+    RestoreIndexCursor()
 
     index_id = -1
   endif
