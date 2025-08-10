@@ -16,10 +16,10 @@ if !has('vim9script') ||  v:version < 900
   finish
 endif
 
-if exists('g:vim_poptools_loaded') && g:vim_poptools_loaded
+if exists('g:loaded_vim_poptools') && g:loaded_vim_poptools
   finish
 endif
-g:vim_poptools_loaded = true
+g:loaded_vim_poptools = true
 
 var release_notes =<< END
 
