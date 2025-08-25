@@ -1,4 +1,4 @@
-vim9script noclear
+vim9script
 
 # Slam stuff in a popup
 # Maintainer:	Ubaldo Tiberi
