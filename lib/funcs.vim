@@ -334,6 +334,7 @@ def PopupFilter(id: number,
       if ln == getcurpos(main_id)[1]
         win_execute(main_id, "normal! gg")
       endif
+      redraw
     elseif index(["\<S-Tab>", "\<C-p>", "\<Up>", "\<ScrollWheelUp>"], key) !=
         -1
       var ln = getcurpos(main_id)[1]
@@ -341,6 +342,7 @@ def PopupFilter(id: number,
       if ln == getcurpos(main_id)[1]
         win_execute(main_id, "normal! G")
       endif
+      redraw
     # Scroll preview window
     elseif preview_id != -1 && key == "\<C-f>"
         win_execute(preview_id, "normal! \<C-f>")
