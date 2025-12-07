@@ -436,8 +436,8 @@ def PopupFilter(id: number,
       else
         popup_settext(main_id, results)
       endif
-    else
-      Echowarn('Unknown key')
+    # else
+    #   Echowarn('Unknown key')
     endif
   catch
     ClosePopups()
