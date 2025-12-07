@@ -13,7 +13,7 @@ Exploit popups as much as you can!
 Poptools aims to boost your productivity by using popups for a variety of
 tasks—from finding files and directories to setting your favorite colorscheme.
 
-Unlike similar plugins such as [fzf][0], [fuzzyy][1], or [scope][2], Poptools
+Unlike similar plugins such as [fzf][0] or [fuzzbox][1], Poptools
 keeps things essential and runs external programs synchronously—which,
 honestly, doesn’t bother me at all!
 
@@ -163,5 +163,4 @@ etc.
 
 
 [0]: https://github.com/junegunn/fzf.vim
-[1]: https://github.com/Donaldttt/fuzzyy
-[2]: https://github.com/girishji/scope.vim
+[1]: https://github.com/vim-fuzzbox/fuzzbox.vim
