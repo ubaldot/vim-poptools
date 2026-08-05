@@ -314,6 +314,13 @@ def PopupFilter(id: number,
     return true
   endif
 
+  if key ==# '<CursorHold>'
+      || key ==# '<CursorMoved>'
+      || key ==# '<FocusGained>'
+      || key ==# '<FocusLost>'
+    return true
+  endif
+
   # For debugging
   # echo 'Pressed key: ' .. key
   echo ''
