@@ -127,7 +127,11 @@ def PopupCallbackFileBuffer(id: number, idx: number)
       popup_close(preview_id, -1)
     endif
     echo ""
+    # Strip out trailing '[+]' for indicating modified buffer
     var selection = getbufline(winbufnr(main_id), idx)[0]
+      -> substitute('\s*\[+\]$', '', '')
+    # UBA
+    echom "selection: " .. selection
     exe $'edit {selection}'
     RestoreCursor()
   endif
@@ -935,6 +939,7 @@ export def Buffers()
   InitScriptLocalVars()
   var results = getcompletion('', 'buffer', true)
     ->map((_, val) => fnamemodify(val, ':.'))
+    ->map((_, val) => getbufvar(val, '&modified') ? $'{val} [+]' : val)
   # var title = " Buffers: "
   ShowPopup(results, 'buffer')
 enddef
