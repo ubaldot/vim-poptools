@@ -354,6 +354,23 @@ def PopupFilter(id: number,
         win_execute(main_id, "normal! G")
       endif
       redraw
+
+    # Delete buffer with <c-d> when buffers list is shown in popup
+    elseif search_type == 'buffer' && key ==# "\<c-d>"
+      var idx = line('.', main_id)
+      var selection = getbufline(winbufnr(main_id), idx)[0]
+        -> substitute('\s*\[+\]$', '', '')
+
+      if getbufvar(bufnr(selection), '&modified')
+        Echoerr('Buffer is modified. Cannot be deleted.')
+      else
+        exe $"bd {bufnr(selection)}"
+
+        # Remove pop an element from the list (in-place)
+        remove(results, idx - 1)
+        popup_settext(main_id, results)
+      endif
+
     # Scroll preview window
     elseif preview_id != -1 && key == "\<C-f>"
         win_execute(preview_id, "normal! \<C-f>")

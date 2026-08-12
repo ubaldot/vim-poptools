@@ -32,7 +32,7 @@ The commands are self-explanatory:
 :PoptoolsFindFile
 :PoptoolsFindFileInPath # Takes into account the setting of :h 'path'.
 :PoptoolsFindDir # Search from the current directory downwards
-:PoptoolsBuffers
+:PoptoolsBuffers # Note: <c-d> delete the highlighted buffer
 :PoptoolsRecentFiles
 :PoptoolsCmdHistory
 :PoptoolsKill # When something goes wrong, you can clear all the Poptools popups
