@@ -130,9 +130,13 @@ def PopupCallbackFileBuffer(id: number, idx: number)
     # Strip out trailing '[+]' for indicating modified buffer
     var selection = getbufline(winbufnr(main_id), idx)[0]
       -> substitute('\s*\[+\]$', '', '')
-    # UBA
-    echom "selection: " .. selection
-    exe $'edit {selection}'
+
+    if filereadable(selection)
+      exe $'edit {selection}'
+    else
+      Echoerr($"File '{selection}' not found")
+    endif
+
     RestoreCursor()
   endif
 enddef
@@ -978,7 +982,7 @@ enddef
 export def RecentFiles()
   InitScriptLocalVars()
   var results =  copy(v:oldfiles)
-    ->filter((_, val) => filereadable(expand(val)))
+    # ->filter((_, val) => filereadable(expand(val)))
     ->map((_, val) => fnamemodify(val, ':.'))
   ShowPopup(results, 'recent_files')
 enddef
