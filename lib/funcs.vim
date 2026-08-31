@@ -130,6 +130,8 @@ def PopupCallbackFileBuffer(id: number, idx: number)
     # Strip out trailing '[+]' for indicating modified buffer
     var selection = getbufline(winbufnr(main_id), idx)[0]
       -> substitute('\s*\[+\]$', '', '')
+      -> substitute('\\', '/', 'g')
+      ->fnamemodify(':p')
 
     if filereadable(selection)
       exe $'edit {selection}'
