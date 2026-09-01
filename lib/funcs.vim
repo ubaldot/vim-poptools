@@ -30,10 +30,12 @@ var grep_inc_search: bool
 var gui_cursor: list<dict<any>>
 
 export def Echoerr(msg: string)
+  redraw
   echohl ErrorMsg | echom $"[poptools] {msg}" | echohl None
 enddef
 
 export def Echowarn(msg: string)
+  redraw
   echohl WarningMsg | echom $"[poptools] {msg}" | echohl None
 enddef
 
@@ -130,7 +132,6 @@ def PopupCallbackFileBuffer(id: number, idx: number)
     # Strip out trailing '[+]' for indicating modified buffer
     var selection = getbufline(winbufnr(main_id), idx)[0]
       -> substitute('\s*\[+\]$', '', '')
-      -> substitute('\\', '/', 'g')
       ->fnamemodify(':p')
 
     if filereadable(selection)
